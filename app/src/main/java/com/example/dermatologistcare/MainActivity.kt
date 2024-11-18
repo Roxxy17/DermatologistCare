@@ -255,12 +255,13 @@ fun MyApp(modifier: Modifier = Modifier) {
                             )
                         },
                         label = {
+                            if (currentRoute == Screen.Track.route){
                             Text(
                                 "Track",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Track.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color(0xFF00A19B),
@@ -295,13 +296,13 @@ fun MyApp(modifier: Modifier = Modifier) {
                                 modifier = Modifier.size(24.dp)
                             )
                         },
-                        label = {
+                        label = { if (currentRoute == Screen.Resource.route){
                             Text(
                                 "Resource",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Resource.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color(0xFF00A19B),
@@ -324,12 +325,13 @@ fun MyApp(modifier: Modifier = Modifier) {
                             )
                         },
                         label = {
+                            if (currentRoute == Screen.Profile.route){
                             Text(
                                 "Profile",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Profile.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color(0xFF00A19B),
