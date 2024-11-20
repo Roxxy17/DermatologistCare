@@ -10,8 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -158,7 +161,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                 Column{
 
                     Text(
-                        text = "Hello, User!",
+                        text = "Hello, Atmint!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -355,7 +358,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                     shape = CircleShape
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_camera),
+                        painter = painterResource(id = R.drawable.ic_scan),
                         contentDescription = "Camera",
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
@@ -385,3 +388,4 @@ fun GreetingPreview() {
         MyApp()
     }
 }
+
