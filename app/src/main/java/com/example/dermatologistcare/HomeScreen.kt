@@ -27,11 +27,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -41,26 +44,52 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
-import com.example.dermatologistcare.ui.theme.fabColor
+import com.example.dermatologistcare.ui.theme.highlight
+
 
 @Composable
-fun Background(){
-    Image(
-        if (isSystemInDarkTheme()) {
-            painterResource(id = R.drawable.background_dark)
-        }else{
-            painterResource(id = R.drawable.background)}, // Ganti dengan id resource gambar Anda
-        contentDescription = "Background Image",
-        contentScale = ContentScale.Crop, // Mengisi layar dengan proporsi gambar
-        modifier = Modifier.fillMaxSize()
-    )
+fun Background(
+    isProfileScreen: Boolean = false,
+    themeViewModel: ThemeViewModel = viewModel()
+) {
+    val themeState = themeViewModel.themeState.collectAsState()
+
+    if (!themeState.value.isLoading) {
+        Image(
+            painter = if (themeState.value.isDarkMode) {
+                painterResource(id = R.drawable.background_dark)
+            } else {
+                painterResource(id = R.drawable.background)
+            },
+            contentDescription = "Background Image",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (isProfileScreen) Modifier.rotate(180f)
+                    else Modifier
+                )
+        )
+    }
 }
 
+
 @Composable
-fun HomeScreen() {
+fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
     val scrollState = rememberScrollState()
-Background()
+    val themeState = themeViewModel.themeState.collectAsState()
+
+    val isDarkMode = themeState.value.isDarkMode
+
+    // Choose color based on dark/light theme
+    val cardColor = if (isDarkMode) {
+        Color(0xFFE3FEF7).copy(alpha = 0.05f) // Dark mode color
+    } else {
+        Color(0xFF424242).copy(alpha = 0.05f) // Light mode color
+    }
     Column( modifier = Modifier
         .verticalScroll(scrollState) // Menambahkan scrolling
         .fillMaxSize()) {
@@ -94,7 +123,7 @@ Background()
                             contentDescription = "Home Icon",
                             modifier = Modifier.size(100.dp)
                                 .weight(1f)
-                                ,tint = fabColor
+                                ,tint =MaterialTheme.colorScheme.tertiary
                         )
                         Column (
                             modifier = Modifier.weight(2f)
@@ -130,7 +159,7 @@ Background()
                             Card(
 
                                 colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF424242).copy(alpha = 0.05f)
+                                    containerColor = cardColor
                                 )
                             ) {
                                 Column (
@@ -155,8 +184,8 @@ Background()
                                         progress = {
                                             0.5f
                                         },
-                                        color = fabColor,
-                                        trackColor = Color(0xFF424242).copy(alpha = 0.05f),
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        trackColor = cardColor.copy(alpha = 0.25f),
                                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -175,7 +204,7 @@ Background()
                                         .weight(1f)
                                         .padding(end = 2.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFF424242).copy(alpha = 0.05f)
+                                        containerColor = cardColor
                                     )
                                 ) {Column (
                                     modifier = Modifier.padding(start = 5.dp, end = 5.dp)
@@ -204,7 +233,7 @@ Background()
                                         .weight(1f)
                                         .padding(start = 2.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFF424242).copy(alpha = 0.05f)
+                                        containerColor = cardColor
                                     )
                                 ) {
                                     Column (
@@ -316,7 +345,7 @@ fun RecentItem (index: Int){
                         modifier = Modifier.fillMaxWidth()
                     )
                     HorizontalDivider(
-                        color = Color(0xFF00A19B),
+                        color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     Row (
@@ -357,12 +386,14 @@ fun HospitalItem(index: Int) {
                 .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White // Background color of the card
-            ),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxHeight()
+                    .fillMaxHeight(),
             ) {
                 Box {  // Added Box to overlay bookmark icon on image
                     Image(
@@ -373,6 +404,7 @@ fun HospitalItem(index: Int) {
                             .height(200.dp)
                             .clip(RoundedCornerShape(bottomEnd = 20.dp)),
                         contentScale = ContentScale.Crop
+
                     )
 
                     // Bookmark Icon
@@ -385,7 +417,7 @@ fun HospitalItem(index: Int) {
                         Icon(
                             painter = painterResource(id = R.drawable.bookmarked),
                             contentDescription = "Bookmark",
-                            tint = fabColor
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -399,7 +431,7 @@ fun HospitalItem(index: Int) {
                     )
 
                     HorizontalDivider(
-                        color = Color(0xFF00A19B),
+                        color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
@@ -415,7 +447,7 @@ fun HospitalItem(index: Int) {
                         Text(
                             text = "2.3KM",
                             fontSize = 10.sp,
-                            color = Color(0xFF00A19B)
+                            color = MaterialTheme.colorScheme.tertiary
                         )
                     }
                 }

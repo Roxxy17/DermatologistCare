@@ -60,8 +60,14 @@ dependencies {
 
 
     // Jetpack Compose Integration/NAVIGATION
-    implementation ("androidx.navigation:navigation-compose:2.8.4")
+    implementation (libs.androidx.navigation.compose)
+    implementation (libs.androidx.runtime.livedata)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-        implementation ("com.github.0xRahad:RioBottomNavigation:1.0.2")
 
+    implementation (libs.androidx.animation)
 }
