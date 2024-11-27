@@ -8,29 +8,33 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,28 +43,47 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.dermatologistcare.navigation.Screen
+import com.example.dermatologistcare.setting.SettingsViewModel
+import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
-import com.example.dermatologistcare.ui.theme.fabColor
 
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Track : Screen("track")
-    object Camera : Screen("camera")
-    object Resource : Screen("resource")
-    object Profile : Screen("profile")
+
+@Composable
+fun SplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.logo), // Ganti dengan logo aplikasi Anda
+            contentDescription = "App Logo",
+            modifier = Modifier.size(200.dp)
+        )
+    }
 }
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DermatologistCareTheme {
-                MyApp()
+            val themeViewModel: ThemeViewModel = viewModel()
+            val themeState = themeViewModel.themeState.collectAsState()
+
+            if (!themeState.value.isLoading) {
+                DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
+                    // Your app content here
+                    MyApp()
+                }
+            } else {
+                SplashScreen()
             }
         }
     }
@@ -139,6 +162,8 @@ fun SubtractedNavigationShape(
 fun MyApp(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val themeViewModel: ThemeViewModel = viewModel()
+    val themeState by themeViewModel.themeState.collectAsState()
 
     val fabSize = 72.dp
 
@@ -150,15 +175,16 @@ fun MyApp(modifier: Modifier = Modifier) {
             navController.navigate(Screen.Camera.route)
         }
     }
-
+Background()
     Scaffold(topBar = {
-        // Top Bar
+        if (currentRoute != Screen.Profile.route) {
         TopAppBar(
+
             title = {
                 Column{
 
                     Text(
-                        text = "Hello, User!",
+                        text = "Hello, Atmint!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -172,7 +198,7 @@ fun MyApp(modifier: Modifier = Modifier) {
             },
             actions = {
                 // Notification Icon
-                IconButton(onClick = { /* Handle notification click */ }) {
+                IconButton(onClick = {  }) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
                         contentDescription = "Notifications",
@@ -180,10 +206,11 @@ fun MyApp(modifier: Modifier = Modifier) {
                     )
                 }
                 // Profile Image
-                IconButton(onClick = { /* Handle profile click */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_akun), // Replace with your profile image
+                IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
+                    Image(
+                        painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
                         contentDescription = "Profile",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
@@ -191,10 +218,23 @@ fun MyApp(modifier: Modifier = Modifier) {
                     )
                 }
             },
-            modifier = Modifier.shadow(elevation = 8.dp)
+            modifier = Modifier.shadow(elevation = 0.dp),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent // Set transparency
+            )
         )
-    },
+    }
+                      },
         bottomBar = {
+            val scrollState = rememberScrollState()
+            val isDarkMode = isSystemInDarkTheme()
+
+            // Choose color based on dark/light theme
+            val cardColor = if (themeState.isDarkMode) {
+                Color(0xFFE3FEF7) // Dark mode color
+            } else {
+                Color(0xFF424242) // Light mode color
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -202,6 +242,7 @@ fun MyApp(modifier: Modifier = Modifier) {
             ) {
                 // Navigation Bar
                 NavigationBar(
+
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
@@ -210,8 +251,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                             elevation = 8.dp,
                             shape = SubtractedNavigationShape(fabSize = fabSize, cornerRadius = 40.dp)
                         ),
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF00A19B)
+
                 ) {
                     // Home Item
                     NavigationBarItem(
@@ -234,11 +274,11 @@ fun MyApp(modifier: Modifier = Modifier) {
                             }
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00A19B),
-                            unselectedIconColor = Color.Gray,
-                            selectedTextColor = Color(0xFF00A19B),
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = Color.White
+                            selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedIconColor = cardColor,
+                            selectedTextColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedTextColor = cardColor,
+
                         )
                     )
 
@@ -255,19 +295,20 @@ fun MyApp(modifier: Modifier = Modifier) {
                             )
                         },
                         label = {
+                            if (currentRoute == Screen.Track.route){
                             Text(
                                 "Track",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Track.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00A19B),
-                            unselectedIconColor = Color.Gray,
-                            selectedTextColor = Color(0xFF00A19B),
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = Color.White
+                            selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedIconColor = cardColor,
+                            selectedTextColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedTextColor = cardColor,
+
                         )
                     )
 
@@ -295,20 +336,20 @@ fun MyApp(modifier: Modifier = Modifier) {
                                 modifier = Modifier.size(24.dp)
                             )
                         },
-                        label = {
+                        label = { if (currentRoute == Screen.Resource.route){
                             Text(
                                 "Resource",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Resource.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00A19B),
-                            unselectedIconColor = Color.Gray,
-                            selectedTextColor = Color(0xFF00A19B),
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = Color.White
+                            selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedIconColor = cardColor,
+                            selectedTextColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedTextColor = cardColor,
+
                         )
                     )
 
@@ -324,19 +365,20 @@ fun MyApp(modifier: Modifier = Modifier) {
                             )
                         },
                         label = {
+                            if (currentRoute == Screen.Profile.route){
                             Text(
                                 "Profile",
                                 fontSize = 12.sp,
-                                fontWeight = if (currentRoute == Screen.Profile.route)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
+                                fontWeight =
+                                    FontWeight.Bold
+                            )}
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF00A19B),
-                            unselectedIconColor = Color.Gray,
-                            selectedTextColor = Color(0xFF00A19B),
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = Color.White
+                            selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedIconColor = cardColor,
+                            selectedTextColor = MaterialTheme.colorScheme.tertiary,
+                            unselectedTextColor = cardColor,
+
                         )
                     )
                 }
@@ -349,13 +391,13 @@ fun MyApp(modifier: Modifier = Modifier) {
                         .size(fabSize)
                         .offset(y = (-fabSize/3))
                         .shadow(elevation = 8.dp, shape = CircleShape),
-                    containerColor = Color(0xFF00A19B),
+                    containerColor = MaterialTheme.colorScheme.tertiary,
                     shape = CircleShape
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_camera),
+                        painter = painterResource(id = R.drawable.ic_scan),
                         contentDescription = "Camera",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -376,10 +418,11 @@ fun MyApp(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 fun GreetingPreview() {
-    DermatologistCareTheme(darkTheme = true) {
+    DermatologistCareTheme(darkTheme = false) {
         MyApp()
     }
 }
+
