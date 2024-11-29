@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.highlight
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -75,6 +79,8 @@ fun Background(
         )
     }
 }
+
+
 
 
 @Composable
@@ -149,12 +155,15 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
 
                                 )
                             }
-                            Text(
-                                text = "Saturday - 16 November",
+                            val currentDate = remember {
+                                val dateFormat = SimpleDateFormat("EEEE - dd MMMM", Locale.getDefault())
+                                dateFormat.format(Date())
+                            }
 
+                            Text(
+                                text = currentDate,
                                 fontSize = 14.sp,
                                 modifier = Modifier.fillMaxWidth()
-
                             )
                             Card(
 

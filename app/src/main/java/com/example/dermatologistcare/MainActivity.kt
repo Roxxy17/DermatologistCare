@@ -8,12 +8,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +30,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
@@ -44,6 +49,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -156,6 +162,124 @@ fun SubtractedNavigationShape(
 }
 
 
+@Composable
+fun LiquidFabMenu(
+    navController: NavController,
+    isFabMenuExpanded: Boolean,
+    onToggleMenu: (Boolean) -> Unit
+) {
+    val fabSize = 72.dp
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            navController.navigate(Screen.Camera.route)
+        }
+    }
+
+    // Spring-based animation for FAB expansion
+    val fabAnimationSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
+
+    // Animate FAB positions with spring
+    val galleryFabOffset by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) -150f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    val cameraFabOffset by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 150f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    // Scale animation for FABs
+    val galleryFabScale by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 1f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    val cameraFabScale by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 1f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+    // Rotation animation for the main FAB
+    var rotationAngle by remember { mutableStateOf(0f) }
+    val rotation by animateFloatAsState(
+        targetValue = rotationAngle,
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = LinearEasing
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(fabSize)
+    ) {
+        // Gallery FAB
+        FloatingActionButton(
+            onClick = { galleryLauncher.launch("image/*") },
+            modifier = Modifier
+                .size(fabSize)
+                .offset(y=(-fabSize / 1f),x =(fabSize / 1f))
+                .scale(galleryFabScale)
+                .align(Alignment.Center),
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_gallery),
+                contentDescription = "Gallery",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        // Main FAB (Toggle Menu)
+        FloatingActionButton(
+            onClick = {
+                onToggleMenu(!isFabMenuExpanded)
+                rotationAngle += 90f // Rotate the icon by 45 degrees on click
+            },
+            modifier = Modifier
+                .size(fabSize)
+                .align(Alignment.Center)
+                .shadow(elevation = 8.dp, shape = CircleShape)
+                .rotate(rotation), // Apply the rotation
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = if (isFabMenuExpanded) R.drawable.ic_x else R.drawable.ic_scan),
+                contentDescription = if (isFabMenuExpanded) "Close Menu" else "Open Menu",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        // Camera FAB
+        FloatingActionButton(
+            onClick = { navController.navigate(Screen.Camera.route) },
+            modifier = Modifier
+                .size(fabSize)
+                .offset(y=(-fabSize / 1f), x =(-fabSize / 1f))
+                .scale(cameraFabScale)
+                .align(Alignment.Center),
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_camera),
+                contentDescription = "Camera",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -164,6 +288,21 @@ fun MyApp(modifier: Modifier = Modifier) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val themeViewModel: ThemeViewModel = viewModel()
     val themeState by themeViewModel.themeState.collectAsState()
+
+    // State for FAB menu extension
+    var isMenuExtended by remember { mutableStateOf(false) }
+
+    // Animation progress for FAB
+    val fabAnimationProgress by animateFloatAsState(
+        targetValue = if (isMenuExtended) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = LinearEasing
+        )
+    )
+
+    // Toggle animation function
+    val toggleAnimation = { isMenuExtended = !isMenuExtended }
 
     val fabSize = 72.dp
 
@@ -175,59 +314,59 @@ fun MyApp(modifier: Modifier = Modifier) {
             navController.navigate(Screen.Camera.route)
         }
     }
-Background()
+
+    Background()
+
     Scaffold(topBar = {
-        if (currentRoute != Screen.Profile.route) {
-        TopAppBar(
-
-            title = {
-                Column{
-
-                    Text(
-                        text = "Hello, Atmint!",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Welcome back to your dashboard.",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                }
-            },
-            actions = {
-                // Notification Icon
-                IconButton(onClick = {  }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
-                        contentDescription = "Notifications",
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-                // Profile Image
-                IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
-                    Image(
-                        painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
-                        contentDescription = "Profile",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, Color.Gray, CircleShape)
-                    )
-                }
-            },
-            modifier = Modifier.shadow(elevation = 0.dp),
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent // Set transparency
+        if (currentRoute != Screen.Profile.route && currentRoute != Screen.Camera.route) {
+            TopAppBar(
+                title = {
+                    Column{
+                        Text(
+                            text = "Hello, Atmint!",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Welcome back to your dashboard.",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Gray
+                        )
+                    }
+                },
+                actions = {
+                    // Notification Icon
+                    IconButton(onClick = {  }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
+                            contentDescription = "Notifications",
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    // Profile Image
+                    IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
+                        Image(
+                            painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color.Gray, CircleShape)
+                        )
+                    }
+                },
+                modifier = Modifier.shadow(elevation = 0.dp),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent // Set transparency
+                )
             )
-        )
-    }
-                      },
+        }
+    },
         bottomBar = {
             val scrollState = rememberScrollState()
-            val isDarkMode = isSystemInDarkTheme()
+            isSystemInDarkTheme()
 
             // Choose color based on dark/light theme
             val cardColor = if (themeState.isDarkMode) {
@@ -238,11 +377,9 @@ Background()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-
             ) {
                 // Navigation Bar
                 NavigationBar(
-
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
@@ -251,7 +388,6 @@ Background()
                             elevation = 8.dp,
                             shape = SubtractedNavigationShape(fabSize = fabSize, cornerRadius = 40.dp)
                         ),
-
                 ) {
                     // Home Item
                     NavigationBarItem(
@@ -383,22 +519,17 @@ Background()
                     )
                 }
 
-                // Camera FAB
-                FloatingActionButton(
-                    onClick = { galleryLauncher.launch("image/*") },
+                var isFabMenuExpanded by remember { mutableStateOf(false) }
+
+                Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .size(fabSize)
-                        .offset(y = (-fabSize/3))
-                        .shadow(elevation = 8.dp, shape = CircleShape),
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    shape = CircleShape
+                        .offset(y = (-fabSize / 3))
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_scan),
-                        contentDescription = "Camera",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
+                    LiquidFabMenu(
+                        navController = navController,
+                        isFabMenuExpanded = isFabMenuExpanded,
+                        onToggleMenu = { expanded -> isFabMenuExpanded = expanded }
                     )
                 }
             }
@@ -417,7 +548,6 @@ Background()
         }
     }
 }
-
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 fun GreetingPreview() {

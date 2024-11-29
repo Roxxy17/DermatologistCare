@@ -70,4 +70,9 @@ dependencies {
 
 
     implementation (libs.androidx.animation)
+
+    //location
+    implementation (libs.play.services.location)
+    implementation (libs.accompanist.permissions)
+    implementation (libs.kotlinx.coroutines.play.services)
 }
