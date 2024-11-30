@@ -148,7 +148,7 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "Sleman, Yogyakarta",
+                                    text = "Kota, Provinsi",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     modifier = Modifier.fillMaxWidth()

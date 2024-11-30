@@ -1,6 +1,9 @@
 package com.example.dermatologistcare
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
@@ -40,6 +43,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +52,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidViewBinding
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
@@ -55,6 +61,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+
 import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.SettingsViewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
@@ -76,24 +83,7 @@ fun SplashScreen() {
         )
     }
 }
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            val themeViewModel: ThemeViewModel = viewModel()
-            val themeState = themeViewModel.themeState.collectAsState()
 
-            if (!themeState.value.isLoading) {
-                DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
-                    // Your app content here
-                    MyApp()
-                }
-            } else {
-                SplashScreen()
-            }
-        }
-    }
-}
 @Composable
 fun SubtractedNavigationShape(
     fabSize: Dp,
@@ -168,12 +158,17 @@ fun LiquidFabMenu(
     isFabMenuExpanded: Boolean,
     onToggleMenu: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     val fabSize = 72.dp
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            navController.navigate(Screen.Camera.route)
+            // Create an intent to start ResultActivity with the gallery image URI
+            val intent = Intent(context, ResultActivity::class.java).apply {
+                putExtra(CameraActivity.EXTRA_CAMERAX_IMAGE, uri.toString())
+            }
+            context.startActivity(intent)
         }
     }
 
@@ -280,6 +275,35 @@ fun LiquidFabMenu(
         }
     }
 }
+class MainActivity : ComponentActivity() {
+
+    private fun allPermissionsGranted() =
+        ContextCompat.checkSelfPermission(
+            this,
+            REQUIRED_PERMISSION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            val themeViewModel: ThemeViewModel = viewModel()
+            val themeState = themeViewModel.themeState.collectAsState()
+
+            if (!themeState.value.isLoading) {
+                DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
+                    // Your app content here
+                    MyApp()
+                }
+            } else {
+                SplashScreen()
+            }
+        }
+    }
+    companion object {
+        private const val REQUIRED_PERMISSION = Manifest.permission.CAMERA
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -415,7 +439,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
 
@@ -432,12 +456,12 @@ fun MyApp(modifier: Modifier = Modifier) {
                         },
                         label = {
                             if (currentRoute == Screen.Track.route){
-                            Text(
-                                "Track",
-                                fontSize = 12.sp,
-                                fontWeight =
+                                Text(
+                                    "Track",
+                                    fontSize = 12.sp,
+                                    fontWeight =
                                     FontWeight.Bold
-                            )}
+                                )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.tertiary,
@@ -445,7 +469,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
                     // Camera Item (Spacer)
@@ -477,7 +501,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                                 "Resource",
                                 fontSize = 12.sp,
                                 fontWeight =
-                                    FontWeight.Bold
+                                FontWeight.Bold
                             )}
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -486,7 +510,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
                     // Profile Item
@@ -502,12 +526,12 @@ fun MyApp(modifier: Modifier = Modifier) {
                         },
                         label = {
                             if (currentRoute == Screen.Profile.route){
-                            Text(
-                                "Profile",
-                                fontSize = 12.sp,
-                                fontWeight =
+                                Text(
+                                    "Profile",
+                                    fontSize = 12.sp,
+                                    fontWeight =
                                     FontWeight.Bold
-                            )}
+                                )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.tertiary,
@@ -515,7 +539,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
                 }
 
@@ -542,7 +566,15 @@ fun MyApp(modifier: Modifier = Modifier) {
         ) {
             composable(Screen.Home.route) { HomeScreen() }
             composable(Screen.Track.route) { TrackScreen() }
-            composable(Screen.Camera.route) { CameraScreen() }
+            composable(Screen.Camera.route) { navBackStackEntry ->
+                val context = LocalContext.current
+                // Launch CameraActivity when navigating to this route
+                LaunchedEffect(navBackStackEntry) {
+                    val intent = Intent(context, CameraActivity::class.java)
+                    context.startActivity(intent)
+                }
+            }
+
             composable(Screen.Resource.route) { ResourceScreen() }
             composable(Screen.Profile.route) { ProfileScreen() }
         }
