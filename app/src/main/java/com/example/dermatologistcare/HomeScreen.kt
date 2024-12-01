@@ -72,6 +72,10 @@ fun Background(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
+                .then(
+                    if (isProfileScreen) Modifier.rotate(180f)
+                    else Modifier
+                )
         )
     }
 }
