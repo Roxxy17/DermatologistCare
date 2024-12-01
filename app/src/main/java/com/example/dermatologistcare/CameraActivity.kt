@@ -35,7 +35,7 @@ class CameraActivity : AppCompatActivity() {
         const val CAMERAX_RESULT = 200
         private const val CAMERA_PERMISSION_REQUEST_CODE = 1001
     }
-
+//Camera
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,6 +53,7 @@ class CameraActivity : AppCompatActivity() {
 
         binding.captureButton.setOnClickListener { takePhoto() }
         binding.backToMenuButton.setOnClickListener {
+
 
             finish()  // Optionally finish the current activity if you don't want to keep it in the back stack
         }
