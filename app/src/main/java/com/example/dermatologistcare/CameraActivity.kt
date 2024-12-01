@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.PorterDuff
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -28,6 +29,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCameraBinding
     private var cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var imageCapture: ImageCapture? = null
+    private var flashEnabled = false  // Track flash state
 
     companion object {
         private const val TAG = "CameraActivity"
@@ -50,12 +52,31 @@ class CameraActivity : AppCompatActivity() {
                 CAMERA_PERMISSION_REQUEST_CODE)
         }
 
-
         binding.captureButton.setOnClickListener { takePhoto() }
-        binding.backToMenuButton.setOnClickListener {
+        binding.backToMenuButton.setOnClickListener { finish() }
 
-            finish()  // Optionally finish the current activity if you don't want to keep it in the back stack
+        // Flash button click listener
+        binding.flashButton.setOnClickListener {
+            flashEnabled = !flashEnabled
+            updateFlashMode()
+
+            // Determine the icon based on the flash state
+            val flashIcon = if (flashEnabled) R.drawable.ic_flash_on else R.drawable.ic_flash_off
+
+            // Update the flash icon on the button
+            binding.flashButton.setImageResource(flashIcon)
+            binding.flashButton.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN)
         }
+        binding.switchCamera.setOnClickListener {
+            cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            } else {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            }
+            startCamera()
+        }
+
+
     }
 
     override fun onResume() {
@@ -75,7 +96,9 @@ class CameraActivity : AppCompatActivity() {
                     it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
                 }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setFlashMode(if (flashEnabled) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
+                .build()
 
             try {
                 cameraProvider.unbindAll()
@@ -86,14 +109,15 @@ class CameraActivity : AppCompatActivity() {
                     imageCapture
                 )
             } catch (exc: Exception) {
-                Toast.makeText(
-                    this@CameraActivity,
-                    "Gagal memunculkan kamera.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@CameraActivity, "Gagal memunculkan kamera.", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "startCamera: ${exc.message}")
             }
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun updateFlashMode() {
+        val flashMode = if (flashEnabled) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
+        imageCapture?.flashMode = flashMode
     }
 
     private fun takePhoto() {
@@ -115,11 +139,7 @@ class CameraActivity : AppCompatActivity() {
                 }
 
                 override fun onError(exc: ImageCaptureException) {
-                    Toast.makeText(
-                        this@CameraActivity,
-                        "Gagal mengambil gambar.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this@CameraActivity, "Gagal mengambil gambar.", Toast.LENGTH_SHORT).show()
                     Log.e(TAG, "onError: ${exc.message}")
                 }
             }
