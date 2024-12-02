@@ -66,23 +66,12 @@ import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.SettingsViewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-
-@Composable
-fun SplashScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.logo), // Ganti dengan logo aplikasi Anda
-            contentDescription = "App Logo",
-            modifier = Modifier.size(200.dp)
-        )
-    }
-}
 
 @Composable
 fun SubtractedNavigationShape(
@@ -285,6 +274,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val splashScreen = installSplashScreen()
+splashScreen.setKeepOnScreenCondition{true}
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(1000L)
+            splashScreen.setKeepOnScreenCondition{false}
+        }
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()
             val themeState = themeViewModel.themeState.collectAsState()
@@ -295,7 +290,7 @@ class MainActivity : ComponentActivity() {
                     MyApp()
                 }
             } else {
-                SplashScreen()
+
             }
         }
     }
