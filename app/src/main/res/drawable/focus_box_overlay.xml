@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer darker overlay -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#80000000"/>
+        </shape>
+    </item>
+
+    <!-- Cutout for focus area -->
+    <item>
+        <bitmap
+            android:src="@drawable/focus_box_cutout"
+            android:gravity="center"
+            android:tileMode="disabled"/>
+    </item>
+</layer-list>

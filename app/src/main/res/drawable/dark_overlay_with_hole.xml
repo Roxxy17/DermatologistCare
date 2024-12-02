@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark background layer -->
+    <item android:drawable="@android:color/black" />
+
+    <!-- Transparent circular hole in the center -->
+    <item>
+        <shape xmlns:android="http://schemas.android.com/apk/res/android">
+            <solid android:color="@android:color/transparent"/>
+            <size android:width="200dp" android:height="200dp" /> <!-- Adjust size for focus area -->
+            <corners android:radius="100dp"/> <!-- Creates a circular hole in the center -->
+        </shape>
+    </item>
+</layer-list>

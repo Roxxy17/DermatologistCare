@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.highlight
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -77,6 +81,8 @@ fun Background(
 }
 
 
+
+
 @Composable
 fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
     val scrollState = rememberScrollState()
@@ -102,7 +108,7 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .width(400.dp)
-                    .height(190.dp) // Set a fixed height for the card
+                    .height(190.dp)
                     .shadow(elevation = 2.dp, shape = RoundedCornerShape( bottomEnd = 10.dp, topEnd = 10.dp , bottomStart = 10.dp)),
                 shape = RoundedCornerShape( bottomEnd = 10.dp,topEnd = 10.dp, bottomStart = 10.dp)
                 ,
@@ -142,19 +148,22 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "Sleman, Yogyakarta",
+                                    text = "Kota, Provinsi",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     modifier = Modifier.fillMaxWidth()
 
                                 )
                             }
-                            Text(
-                                text = "Saturday - 16 November",
+                            val currentDate = remember {
+                                val dateFormat = SimpleDateFormat("EEEE - dd MMMM", Locale.getDefault())
+                                dateFormat.format(Date())
+                            }
 
+                            Text(
+                                text = currentDate,
                                 fontSize = 14.sp,
                                 modifier = Modifier.fillMaxWidth()
-
                             )
                             Card(
 
