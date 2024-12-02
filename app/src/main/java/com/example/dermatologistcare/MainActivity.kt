@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -67,6 +68,8 @@ import com.example.dermatologistcare.setting.SettingsViewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
+import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -264,6 +267,8 @@ fun LiquidFabMenu(
         }
     }
 }
+
+
 class MainActivity : ComponentActivity() {
 
     private fun allPermissionsGranted() =
@@ -273,8 +278,11 @@ class MainActivity : ComponentActivity() {
         ) == PackageManager.PERMISSION_GRANTED
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         val splashScreen = installSplashScreen()
+        val onboardingUtils by lazy { OnboardingUtils(this) }
+
+        super.onCreate(savedInstanceState)
+
 splashScreen.setKeepOnScreenCondition{true}
         CoroutineScope(Dispatchers.Main).launch {
             delay(1000L)
@@ -286,8 +294,19 @@ splashScreen.setKeepOnScreenCondition{true}
 
             if (!themeState.value.isLoading) {
                 DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
-                    // Your app content here
-                    MyApp()
+
+                    val onboardingUtils by lazy { OnboardingUtils(this) }
+                    val isOnboardingCompleted = remember { mutableStateOf(onboardingUtils.isOnboardingCompleted()) }
+
+                    if (isOnboardingCompleted.value) {
+                        MyApp()
+                    } else {
+                        OnboardingScreen {
+                            onboardingUtils.setOnboardingCompleted()
+                            isOnboardingCompleted.value = true
+                        }
+                    }
+
                 }
             } else {
 
@@ -299,6 +318,8 @@ splashScreen.setKeepOnScreenCondition{true}
     }
 }
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -308,10 +329,10 @@ fun MyApp(modifier: Modifier = Modifier) {
     val themeViewModel: ThemeViewModel = viewModel()
     val themeState by themeViewModel.themeState.collectAsState()
 
-    // State for FAB menu extension
+
     var isMenuExtended by remember { mutableStateOf(false) }
 
-    // Animation progress for FAB
+
     val fabAnimationProgress by animateFloatAsState(
         targetValue = if (isMenuExtended) 1f else 0f,
         animationSpec = tween(
@@ -320,7 +341,6 @@ fun MyApp(modifier: Modifier = Modifier) {
         )
     )
 
-    // Toggle animation function
     val toggleAnimation = { isMenuExtended = !isMenuExtended }
 
     val fabSize = 72.dp

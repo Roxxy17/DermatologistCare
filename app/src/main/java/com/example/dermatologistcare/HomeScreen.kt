@@ -108,7 +108,7 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .width(400.dp)
-                    .height(190.dp) // Set a fixed height for the card
+                    .height(190.dp)
                     .shadow(elevation = 2.dp, shape = RoundedCornerShape( bottomEnd = 10.dp, topEnd = 10.dp , bottomStart = 10.dp)),
                 shape = RoundedCornerShape( bottomEnd = 10.dp,topEnd = 10.dp, bottomStart = 10.dp)
                 ,
