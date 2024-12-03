@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.dermatologistcare"
-        minSdk = 26
+        minSdk = 31
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -36,7 +36,10 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
+        buildConfig = true
     }
+
 }
 
 dependencies {
@@ -49,6 +52,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.viewbinding)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.core.splashscreen)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -60,8 +69,36 @@ dependencies {
 
 
     // Jetpack Compose Integration/NAVIGATION
-    implementation ("androidx.navigation:navigation-compose:2.8.4")
+    implementation (libs.androidx.navigation.compose)
+    implementation (libs.androidx.runtime.livedata)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
-        implementation ("com.github.0xRahad:RioBottomNavigation:1.0.2")
+
+    implementation (libs.androidx.animation)
+
+    //location
+    implementation (libs.play.services.location)
+    implementation (libs.accompanist.permissions)
+    implementation (libs.kotlinx.coroutines.play.services)
+
+
+    implementation (libs.androidx.camera.core)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation (libs.androidx.camera.view)
+
+    implementation (libs.androidx.camera.core.v140)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation (libs.androidx.camera.view.v140)
+
+
+//splash screen
+
+    implementation(libs.androidx.core.splashscreen.v100)
+
 
 }
