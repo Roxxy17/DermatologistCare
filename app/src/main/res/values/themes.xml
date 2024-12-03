@@ -6,6 +6,7 @@
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash</item>
         <item name="android:windowSplashScreenAnimationDuration">3000</item>
 
+
     </style>
 
 
