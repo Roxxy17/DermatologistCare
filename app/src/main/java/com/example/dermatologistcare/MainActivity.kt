@@ -1,19 +1,27 @@
 package com.example.dermatologistcare
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
@@ -35,6 +44,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,51 +53,29 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidViewBinding
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+
 import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.SettingsViewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
+import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
-@Composable
-fun SplashScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.logo), // Ganti dengan logo aplikasi Anda
-            contentDescription = "App Logo",
-            modifier = Modifier.size(200.dp)
-        )
-    }
-}
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            val themeViewModel: ThemeViewModel = viewModel()
-            val themeState = themeViewModel.themeState.collectAsState()
-
-            if (!themeState.value.isLoading) {
-                DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
-                    // Your app content here
-                    MyApp()
-                }
-            } else {
-                SplashScreen()
-            }
-        }
-    }
-}
 @Composable
 fun SubtractedNavigationShape(
     fabSize: Dp,
@@ -156,6 +144,182 @@ fun SubtractedNavigationShape(
 }
 
 
+@Composable
+fun LiquidFabMenu(
+    navController: NavController,
+    isFabMenuExpanded: Boolean,
+    onToggleMenu: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val fabSize = 72.dp
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Create an intent to start ResultActivity with the gallery image URI
+            val intent = Intent(context, ResultActivity::class.java).apply {
+                putExtra(CameraActivity.EXTRA_CAMERAX_IMAGE, uri.toString())
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    // Spring-based animation for FAB expansion
+    val fabAnimationSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
+
+    // Animate FAB positions with spring
+    val galleryFabOffset by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) -150f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    val cameraFabOffset by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 150f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    // Scale animation for FABs
+    val galleryFabScale by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 1f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+
+    val cameraFabScale by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 1f else 0f,
+        animationSpec = fabAnimationSpec
+    )
+    // Rotation animation for the main FAB
+    var rotationAngle by remember { mutableStateOf(0f) }
+    val rotation by animateFloatAsState(
+        targetValue = rotationAngle,
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = LinearEasing
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(fabSize)
+    ) {
+        // Gallery FAB
+        FloatingActionButton(
+            onClick = { galleryLauncher.launch("image/*") },
+            modifier = Modifier
+                .size(fabSize)
+                .offset(y=(-fabSize / 1f),x =(fabSize / 1f))
+                .scale(galleryFabScale)
+                .align(Alignment.Center),
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_gallery),
+                contentDescription = "Gallery",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        // Main FAB (Toggle Menu)
+        FloatingActionButton(
+            onClick = {
+                onToggleMenu(!isFabMenuExpanded)
+                rotationAngle += 90f // Rotate the icon by 45 degrees on click
+            },
+            modifier = Modifier
+                .size(fabSize)
+                .align(Alignment.Center)
+                .shadow(elevation = 8.dp, shape = CircleShape)
+                .rotate(rotation), // Apply the rotation
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = if (isFabMenuExpanded) R.drawable.ic_x else R.drawable.ic_scan),
+                contentDescription = if (isFabMenuExpanded) "Close Menu" else "Open Menu",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        // Camera FAB
+        FloatingActionButton(
+            onClick = { navController.navigate(Screen.Camera.route) },
+            modifier = Modifier
+                .size(fabSize)
+                .offset(y=(-fabSize / 1f), x =(-fabSize / 1f))
+                .scale(cameraFabScale)
+                .align(Alignment.Center),
+            containerColor = MaterialTheme.colorScheme.tertiary,
+            shape = CircleShape
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_camera),
+                contentDescription = "Camera",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+
+class MainActivity : ComponentActivity() {
+
+    private fun allPermissionsGranted() =
+        ContextCompat.checkSelfPermission(
+            this,
+            REQUIRED_PERMISSION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        val onboardingUtils by lazy { OnboardingUtils(this) }
+
+        super.onCreate(savedInstanceState)
+
+splashScreen.setKeepOnScreenCondition{true}
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(1000L)
+            splashScreen.setKeepOnScreenCondition{false}
+        }
+        setContent {
+            val themeViewModel: ThemeViewModel = viewModel()
+            val themeState = themeViewModel.themeState.collectAsState()
+
+            if (!themeState.value.isLoading) {
+                DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
+
+                    val onboardingUtils by lazy { OnboardingUtils(this) }
+                    val isOnboardingCompleted = remember { mutableStateOf(onboardingUtils.isOnboardingCompleted()) }
+
+                    if (isOnboardingCompleted.value) {
+                        MyApp()
+                    } else {
+                        OnboardingScreen {
+                            onboardingUtils.setOnboardingCompleted()
+                            isOnboardingCompleted.value = true
+                        }
+                    }
+
+                }
+            } else {
+
+            }
+        }
+    }
+    companion object {
+        private const val REQUIRED_PERMISSION = Manifest.permission.CAMERA
+    }
+}
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -164,6 +328,20 @@ fun MyApp(modifier: Modifier = Modifier) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val themeViewModel: ThemeViewModel = viewModel()
     val themeState by themeViewModel.themeState.collectAsState()
+
+
+    var isMenuExtended by remember { mutableStateOf(false) }
+
+
+    val fabAnimationProgress by animateFloatAsState(
+        targetValue = if (isMenuExtended) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = LinearEasing
+        )
+    )
+
+    val toggleAnimation = { isMenuExtended = !isMenuExtended }
 
     val fabSize = 72.dp
 
@@ -175,59 +353,59 @@ fun MyApp(modifier: Modifier = Modifier) {
             navController.navigate(Screen.Camera.route)
         }
     }
-Background()
+
+    Background()
+
     Scaffold(topBar = {
-        if (currentRoute != Screen.Profile.route) {
-        TopAppBar(
-
-            title = {
-                Column{
-
-                    Text(
-                        text = "Hello, Atmint!",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Welcome back to your dashboard.",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Gray
-                    )
-                }
-            },
-            actions = {
-                // Notification Icon
-                IconButton(onClick = {  }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
-                        contentDescription = "Notifications",
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-                // Profile Image
-                IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
-                    Image(
-                        painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
-                        contentDescription = "Profile",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, Color.Gray, CircleShape)
-                    )
-                }
-            },
-            modifier = Modifier.shadow(elevation = 0.dp),
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent // Set transparency
+        if (currentRoute != Screen.Profile.route && currentRoute != Screen.Camera.route) {
+            TopAppBar(
+                title = {
+                    Column{
+                        Text(
+                            text = "Hello, Atmint!",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Welcome back to your dashboard.",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Gray
+                        )
+                    }
+                },
+                actions = {
+                    // Notification Icon
+                    IconButton(onClick = {  }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
+                            contentDescription = "Notifications",
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                    // Profile Image
+                    IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
+                        Image(
+                            painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color.Gray, CircleShape)
+                        )
+                    }
+                },
+                modifier = Modifier.shadow(elevation = 0.dp),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent // Set transparency
+                )
             )
-        )
-    }
-                      },
+        }
+    },
         bottomBar = {
             val scrollState = rememberScrollState()
-            val isDarkMode = isSystemInDarkTheme()
+            isSystemInDarkTheme()
 
             // Choose color based on dark/light theme
             val cardColor = if (themeState.isDarkMode) {
@@ -238,11 +416,9 @@ Background()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-
             ) {
                 // Navigation Bar
                 NavigationBar(
-
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(80.dp)
@@ -251,7 +427,6 @@ Background()
                             elevation = 8.dp,
                             shape = SubtractedNavigationShape(fabSize = fabSize, cornerRadius = 40.dp)
                         ),
-
                 ) {
                     // Home Item
                     NavigationBarItem(
@@ -279,7 +454,7 @@ Background()
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
 
@@ -296,12 +471,12 @@ Background()
                         },
                         label = {
                             if (currentRoute == Screen.Track.route){
-                            Text(
-                                "Track",
-                                fontSize = 12.sp,
-                                fontWeight =
+                                Text(
+                                    "Track",
+                                    fontSize = 12.sp,
+                                    fontWeight =
                                     FontWeight.Bold
-                            )}
+                                )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.tertiary,
@@ -309,7 +484,7 @@ Background()
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
                     // Camera Item (Spacer)
@@ -341,7 +516,7 @@ Background()
                                 "Resource",
                                 fontSize = 12.sp,
                                 fontWeight =
-                                    FontWeight.Bold
+                                FontWeight.Bold
                             )}
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -350,7 +525,7 @@ Background()
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
 
                     // Profile Item
@@ -366,12 +541,12 @@ Background()
                         },
                         label = {
                             if (currentRoute == Screen.Profile.route){
-                            Text(
-                                "Profile",
-                                fontSize = 12.sp,
-                                fontWeight =
+                                Text(
+                                    "Profile",
+                                    fontSize = 12.sp,
+                                    fontWeight =
                                     FontWeight.Bold
-                            )}
+                                )}
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.tertiary,
@@ -379,26 +554,21 @@ Background()
                             selectedTextColor = MaterialTheme.colorScheme.tertiary,
                             unselectedTextColor = cardColor,
 
-                        )
+                            )
                     )
                 }
 
-                // Camera FAB
-                FloatingActionButton(
-                    onClick = { galleryLauncher.launch("image/*") },
+                var isFabMenuExpanded by remember { mutableStateOf(false) }
+
+                Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .size(fabSize)
-                        .offset(y = (-fabSize/3))
-                        .shadow(elevation = 8.dp, shape = CircleShape),
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    shape = CircleShape
+                        .offset(y = (-fabSize / 3))
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_scan),
-                        contentDescription = "Camera",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
+                    LiquidFabMenu(
+                        navController = navController,
+                        isFabMenuExpanded = isFabMenuExpanded,
+                        onToggleMenu = { expanded -> isFabMenuExpanded = expanded }
                     )
                 }
             }
@@ -411,13 +581,20 @@ Background()
         ) {
             composable(Screen.Home.route) { HomeScreen() }
             composable(Screen.Track.route) { TrackScreen() }
-            composable(Screen.Camera.route) { CameraScreen() }
+            composable(Screen.Camera.route) { navBackStackEntry ->
+                val context = LocalContext.current
+                // Launch CameraActivity when navigating to this route
+                LaunchedEffect(navBackStackEntry) {
+                    val intent = Intent(context, CameraActivity::class.java)
+                    context.startActivity(intent)
+                }
+            }
+
             composable(Screen.Resource.route) { ResourceScreen() }
             composable(Screen.Profile.route) { ProfileScreen() }
         }
     }
 }
-
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 fun GreetingPreview() {
