@@ -301,6 +301,7 @@ splashScreen.setKeepOnScreenCondition{true}
                     if (isOnboardingCompleted.value) {
                         MyApp()
                     } else {
+                        val splashScreen = installSplashScreen()
                         OnboardingScreen {
                             onboardingUtils.setOnboardingCompleted()
                             isOnboardingCompleted.value = true
@@ -593,13 +594,6 @@ fun MyApp(modifier: Modifier = Modifier) {
             composable(Screen.Resource.route) { ResourceScreen() }
             composable(Screen.Profile.route) { ProfileScreen() }
         }
-    }
-}
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Composable
-fun GreetingPreview() {
-    DermatologistCareTheme(darkTheme = false) {
-        MyApp()
     }
 }
 
