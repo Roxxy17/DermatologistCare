@@ -119,6 +119,12 @@ splashScreen.setKeepOnScreenCondition{true}
                         composable("create_account") {
                             CreateAccountScreen(navController) // Navigate to CreateAccountScreen
                         }
+                        composable("login_screen") {
+                            LoginScreenWithNoAnimations(navController) // Display LoginScreen when the route is "login_screen"
+                        }
+                        composable("my_app") {
+                            MyApp()
+                        }
                     }
 
 
@@ -408,6 +414,9 @@ fun MyApp(modifier: Modifier = Modifier) {
 
             composable(Screen.Resource.route) { ResourceScreen() }
             composable(Screen.Profile.route) { ProfileScreen() }
+
+
+
         }
     }
 }
