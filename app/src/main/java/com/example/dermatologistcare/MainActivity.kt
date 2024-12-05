@@ -68,6 +68,8 @@ import com.example.dermatologistcare.setting.SettingsViewModel
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.dermatologistcare.ui.login.CreateAccountScreen
+import com.example.dermatologistcare.ui.login.LoginScreenWithNoAnimations
 import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import kotlinx.coroutines.CoroutineScope
@@ -299,7 +301,7 @@ splashScreen.setKeepOnScreenCondition{true}
                     val isOnboardingCompleted = remember { mutableStateOf(onboardingUtils.isOnboardingCompleted()) }
 
                     if (isOnboardingCompleted.value) {
-                        MyApp()
+                        CreateAccountScreen()
                     } else {
                         OnboardingScreen {
                             onboardingUtils.setOnboardingCompleted()
