@@ -248,9 +248,9 @@ fun CreateAccountScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    enabled = username.isNotBlank() &&
+                    /*enabled = username.isNotBlank() &&
                             email.isNotBlank() &&
-                            password.isNotBlank() ,
+                            password.isNotBlank() ,*/
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                 ) {
@@ -340,6 +340,6 @@ fun SocialMediaButton(iconResId: Int, scale: Float) {
 @Preview
 @Composable
 fun PreviewCreate() {
-    val navController = rememberNavController()  // Mock NavController
+    val navController = rememberNavController()
     CreateAccountScreen(navController = navController)
 }
