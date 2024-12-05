@@ -84,6 +84,9 @@ dependencies {
     implementation (libs.play.services.location)
     implementation (libs.accompanist.permissions)
     implementation (libs.kotlinx.coroutines.play.services)
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+    implementation (libs.kotlinx.coroutines.play.services)
 
 
     implementation (libs.androidx.camera.core)
@@ -99,6 +102,8 @@ dependencies {
 //splash screen
 
     implementation(libs.androidx.core.splashscreen.v100)
+
+
 
 
 }
