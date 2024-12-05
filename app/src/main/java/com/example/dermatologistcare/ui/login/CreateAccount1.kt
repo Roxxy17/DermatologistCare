@@ -1,5 +1,6 @@
 package com.example.dermatologistcare.ui.login
 
+import android.content.res.Configuration
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -29,7 +31,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.R
+import com.example.dermatologistcare.ui.home.HomeScreen
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 
@@ -119,6 +123,11 @@ fun CreateAccountScreen(navController: NavHostController) {
                 TextField(
                     value = username,
                     onValueChange = { username = it },
+                    textStyle = TextStyle(
+                        fontFamily = coolveticaFontFamily,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 18.sp
+                    ),
                     label = { Text(text = "Username",
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
@@ -143,6 +152,11 @@ fun CreateAccountScreen(navController: NavHostController) {
                 TextField(
                     value = email,
                     onValueChange = { email = it },
+                    textStyle = TextStyle(
+                        fontFamily = coolveticaFontFamily,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 18.sp
+                    ),
                     label = { Text(text = "Email",
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
@@ -166,6 +180,11 @@ fun CreateAccountScreen(navController: NavHostController) {
                 TextField(
                     value = password,
                     onValueChange = { password = it },
+                    textStyle = TextStyle(
+                        fontFamily = coolveticaFontFamily,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 18.sp
+                    ),
                     label = { Text(text = "Password",
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
@@ -224,10 +243,14 @@ fun CreateAccountScreen(navController: NavHostController) {
                     animationSpec = tween(durationMillis = 300)
                 )
                 Button(
-                    onClick = { isVisible = !isVisible },
+                    onClick = {
+                        navController.navigate("my_app")},
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
+                    enabled = username.isNotBlank() &&
+                            email.isNotBlank() &&
+                            password.isNotBlank() ,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                 ) {
@@ -284,7 +307,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                         fontFamily = coolveticaFontFamily,
                         fontWeight = FontWeight.Light,
                         fontSize = 20.sp,
-                        modifier = Modifier.clickable { /* TODO: Handle sign in */ }
+                        modifier = Modifier.clickable {  navController.navigate("login_screen")}
                     )
                 }
             }
@@ -312,4 +335,11 @@ fun SocialMediaButton(iconResId: Int, scale: Float) {
             modifier = Modifier.size(32.dp)
         )
     }
+}
+
+@Preview
+@Composable
+fun PreviewCreate() {
+    val navController = rememberNavController()  // Mock NavController
+    CreateAccountScreen(navController = navController)
 }
