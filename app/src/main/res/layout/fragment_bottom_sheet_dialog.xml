@@ -1,0 +1,91 @@
+<!-- res/layout/fragment_save_image_bottom_sheet.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center"
+    android:background="@drawable/rounded_background"
+    android:scrollbars="vertical">
+
+    <!-- Scrollable content for image and text -->
+<ScrollView
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="horizontal"
+android:gravity="start"
+android:paddingBottom="16dp">
+
+<ImageView
+    android:id="@+id/imageDisease"
+    android:layout_width="wrap_content"
+    android:layout_height="108dp"
+    android:layout_marginEnd="16dp"
+    android:src="@drawable/kulit" />
+
+<!-- Vertical layout for name and characteristics -->
+<LinearLayout
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_weight="1">
+
+    <!-- Name of the skin disease -->
+    <TextView
+        android:id="@+id/textDiseaseName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Psoriasis"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="start"
+        android:paddingBottom="8dp"/>
+
+    <!-- Characteristics of the disease -->
+    <TextView
+        android:id="@+id/textDiseaseCharacteristics"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Characteristics: Red, inflamed skin Silvery-white scales Dry, cracked skin"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:gravity="start"/>
+</LinearLayout>
+</LinearLayout>
+    </ScrollView>
+
+    <!-- Horizontal LinearLayout for buttons -->
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="horizontal"
+android:gravity="start">
+
+<!-- Button to go back -->
+<Button
+    android:id="@+id/btnBack"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:text="Kembali"
+    android:layout_marginEnd="3dp"
+    android:background="@drawable/rounded_btn"/> <!-- Apply rounded background -->
+
+<!-- Button to track the disease -->
+<Button
+    android:id="@+id/btnTrack"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:layout_marginStart="3dp"
+    android:text="Track"
+    android:background="@drawable/rounded_btn"/> <!-- Apply rounded background -->
+
+</LinearLayout>
+    </LinearLayout>

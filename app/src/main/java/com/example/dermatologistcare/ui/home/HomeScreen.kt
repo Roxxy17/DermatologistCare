@@ -1,6 +1,12 @@
 package com.example.dermatologistcare.ui.home
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.location.Geocoder
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,10 +20,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -27,7 +35,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,16 +46,23 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dermatologistcare.MyApp
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.setting.ThemeViewModel
+import com.example.dermatologistcare.ui.home.location.LocationPreferences
+import com.example.dermatologistcare.ui.home.weather.retrofit.WeatherApiService
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
+import com.google.android.gms.location.LocationServices
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -80,11 +97,122 @@ fun Background(
 
 
 
+
 @Composable
-fun HomeScreen(themeViewModel: ThemeViewModel = viewModel(),
-               ) {
+fun HomeScreen(
+    themeViewModel: ThemeViewModel = viewModel(),
+) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val themeState = themeViewModel.themeState.collectAsState()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    // Location states
+    val locationName = remember { mutableStateOf("Memuat lokasi...") }
+    val longitude = remember { mutableStateOf(0.0) }
+    val latitude = remember { mutableStateOf(0.0) }
+
+    val aqi = remember { mutableStateOf<Int>(0) }
+
+    var temperature = remember { mutableStateOf("") }
+    val locationPreferences = LocationPreferences(context)
+    val apiKey = "a34d8171b6400aacac7303f6fc160aef"
+
+
+    // Location fetching function
+    fun getDeviceLocation() {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request location permission
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            return
+        }
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { locationResult ->
+                locationResult?.let {
+                    longitude.value = it.longitude
+                    latitude.value = it.latitude
+                    Log.d("Location", "Longitude: ${it.longitude}, Latitude: ${it.latitude}")
+
+                    // Use Geocoder to get city and province
+                    val geocoder = Geocoder(context, Locale.getDefault())
+                    try {
+                        val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val address = addresses[0]
+                            val city = when {
+                                !address.subAdminArea.isNullOrBlank() -> address.subAdminArea // Kabupaten/Kota
+                                !address.locality.isNullOrBlank() -> address.locality // Kota
+                                !address.adminArea.isNullOrBlank() -> address.adminArea // Provinsi fallback
+                                else -> "Lokasi Tidak Dikenal"
+                            }
+                            val province = addresses[0].adminArea ?: "Provinsi Tidak Dikenal"
+                            locationName.value = "$city, $province"
+
+                            // Simpan lokasi baru ke SharedPreferences
+                            locationPreferences.saveLocation(locationName.value, latitude.value, longitude.value)
+                        }
+                    } catch (e: Exception) {
+                        locationName.value = "Gagal mendapatkan lokasi"
+                    }
+                }
+            }
+            .addOnFailureListener {
+                locationName.value = "Gagal mendapatkan lokasi"
+            }
+    }
+
+    // Fetch weather and air quality data when location changes
+    LaunchedEffect(latitude.value, longitude.value) {
+        try {
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://api.openweathermap.org/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val service = retrofit.create(WeatherApiService::class.java)
+
+            // Fetch weather data
+            val weatherResponse = service.getWeather(latitude.value, longitude.value, apiKey)
+            if (weatherResponse.main.temp != null) {
+                temperature.value = "${weatherResponse.main.temp}°C"
+            } else {
+                temperature.value = "Error"
+            }
+
+            // Fetch air pollution data
+            val airPollutionResponse = service.getAirPollution(latitude.value, longitude.value, apiKey)
+            if (airPollutionResponse.list.isNotEmpty()) {
+                aqi.value = airPollutionResponse.list[0].main.aqi
+            } else {
+                aqi.value = 0  // Error case or fallback value
+            }
+        } catch (e: Exception) {
+            temperature.value = "Error"
+            aqi.value = 0
+            Toast.makeText(context, "Error fetching data: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val aqiCategory = when {
+        aqi.value == 0 -> "Error"
+        aqi.value <= 50 -> "Good"
+        aqi.value in 51..100 -> "Moderate"
+        aqi.value in 101..150 -> "Unhealthy for Sensitive Groups"
+        aqi.value in 151..200 -> "Unhealthy"
+        aqi.value in 201..300 -> "Very Unhealthy"
+        else -> "Hazardous"
+    }
+
+
+
 
     val isDarkMode = themeState.value.isDarkMode
 
@@ -94,64 +222,87 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel(),
     } else {
         Color(0xFF424242).copy(alpha = 0.05f) // Light mode color
     }
-    Column( modifier = Modifier
-        .verticalScroll(scrollState) // Menambahkan scrolling
-        .fillMaxSize()) {
 
-        Box(modifier = Modifier
-            .padding(10.dp)
-            .fillMaxWidth()) {
-
+    Column(
+        modifier = Modifier
+            .verticalScroll(scrollState)
+            .fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxWidth()
+        ) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .width(400.dp)
-                    .height(190.dp)
-                    .shadow(elevation = 2.dp, shape = RoundedCornerShape( bottomEnd = 10.dp, topEnd = 10.dp , bottomStart = 10.dp)),
-                shape = RoundedCornerShape( bottomEnd = 10.dp,topEnd = 10.dp, bottomStart = 10.dp)
-                ,
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0x424242) // Warna hitam dengan transparansi 50%
-                ),
 
+                    .wrapContentHeight()
+                    .shadow(
+                        elevation = 2.dp,
+                        shape = RoundedCornerShape(
+                            bottomEnd = 10.dp,
+                            topEnd = 10.dp,
+                            bottomStart = 10.dp
+                        )
+                    ),
+                shape = RoundedCornerShape(
+                    bottomEnd = 10.dp,
+                    topEnd = 10.dp,
+                    bottomStart = 10.dp
+                ),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0x424242)
+                )
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
-                    // Title of the resource
                     Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .fillMaxHeight(), // Membuat Row mengisi lebar maksimum
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_bulan),
                             contentDescription = "Home Icon",
-                            modifier = Modifier.size(100.dp)
-                                .weight(1f)
-                                ,tint =MaterialTheme.colorScheme.tertiary
+                            modifier = Modifier
+                                .size(100.dp)
+                                .weight(1f),
+                            tint = MaterialTheme.colorScheme.tertiary
                         )
-                        Column (
+                        Column(
                             modifier = Modifier.weight(2f)
-                        ){
+                        ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-
-                            ){
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_map_pin),
-                                    contentDescription = "Home Icon",
+                                    contentDescription = "Location Icon",
                                     modifier = Modifier.size(10.dp)
-
-
-
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "Kota, Provinsi",
+                                    text = locationName.value,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
-                                    modifier = Modifier.fillMaxWidth()
-
+                                    modifier = Modifier.weight(1f)
                                 )
+                                IconButton(
+                                    onClick = {
+                                        // Mendapatkan lokasi dan memperbarui data cuaca saat tombol ditekan
+                                        getDeviceLocation()
+                                    },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_map_pin), // Gunakan ikon refresh
+                                        contentDescription = "Refresh Location",
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                }
+
+
                             }
                             val currentDate = remember {
                                 val dateFormat = SimpleDateFormat("EEEE - dd MMMM", Locale.getDefault())
@@ -164,105 +315,85 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel(),
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Card(
-
                                 colors = CardDefaults.cardColors(
                                     containerColor = cardColor
                                 )
                             ) {
-                                Column (
+                                Column(
                                     modifier = Modifier.padding(start = 5.dp, end = 5.dp)
-                                ){
+                                ) {
                                     Text(
                                         text = "AQI",
                                         fontSize = 14.sp,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                     Text(
-                                        text = "Unhealty (155)",
+                                        text = "$aqiCategory (${aqi.value})",
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                     LinearProgressIndicator(
-                                        progress = {
-                                            0.5f
-                                        },
+                                        progress = aqi.value.toFloat() / 20f,
                                         color = MaterialTheme.colorScheme.tertiary,
                                         trackColor = cardColor.copy(alpha = 0.25f),
                                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 8.dp)
-
                                     )
-
                                 }
-
                             }
                             Row(
                                 modifier = Modifier.padding(top = 5.dp)
                             ) {
                                 Card(
-                                    modifier =Modifier
+                                    modifier = Modifier
                                         .weight(1f)
                                         .padding(end = 2.dp),
                                     colors = CardDefaults.cardColors(
                                         containerColor = cardColor
                                     )
-                                ) {Column (
-                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp)
                                 ) {
-
-                                    Text(
-                                        text = "UV Index",
-                                        fontSize = 14.sp,
-
-                                        modifier = Modifier
-
-                                    )
-
-                                    Text(
-                                        text = "Low",
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier
-
-                                    )
-                                }
-
+                                    Column(
+                                        modifier = Modifier.padding(start = 5.dp, end = 5.dp)
+                                    ) {
+                                        Text(
+                                            text = "UV Index",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier
+                                        )
+                                        Text(
+                                            text = "Low",
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier
+                                        )
+                                    }
                                 }
                                 Card(
-                                    modifier =Modifier
+                                    modifier = Modifier
                                         .weight(1f)
                                         .padding(start = 2.dp),
                                     colors = CardDefaults.cardColors(
                                         containerColor = cardColor
                                     )
                                 ) {
-                                    Column (
+                                    Column(
                                         modifier = Modifier.padding(start = 5.dp, end = 5.dp)
                                     ) {
                                         Text(
                                             text = "Temperature",
                                             fontSize = 14.sp,
                                             modifier = Modifier
-
-
                                         )
-
                                         Text(
-                                            text = "25℃",
+                                            text = "${temperature.value}",
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier
-
                                         )
                                     }
-
                                 }
                             }
                         }
@@ -270,14 +401,21 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel(),
                 }
             }
         }
+
+        // Rest of the existing HomeScreen code remains the same...
         Text(
             text = "Recent Diagnose",
-            fontSize = 32.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 16.dp, bottom = 0.dp)
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, start = 16.dp, bottom = 0.dp)
         )
-        LazyRow(modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp)) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
             items(10) { index ->
                 RecentItem(index)
             }
@@ -286,19 +424,25 @@ fun HomeScreen(themeViewModel: ThemeViewModel = viewModel(),
             text = "Hospital Near Me",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 16.dp )
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, start = 16.dp)
         )
-        LazyRow(modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp)) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
             items(2) { index ->
                 HospitalItem(index)
             }
         }
     }
-
-
 }
+
+// Companion object for constant
+private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+
 @Composable
 fun RecentItem (index: Int){
     Box(modifier = Modifier

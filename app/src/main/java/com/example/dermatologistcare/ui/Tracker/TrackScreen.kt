@@ -1,5 +1,8 @@
 package com.example.dermatologistcare
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +17,20 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.dermatologistcare.ui.Tracker.ConditionList
+
+
+class TrackScreenActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val diseaseName = intent.getStringExtra("diseaseName")
+        val imageUri = intent.getStringExtra("imageUri")
+
+        setContent {
+            TrackScreen()
+        }
+    }
+}
 
 @Composable
 fun TrackScreen() {
