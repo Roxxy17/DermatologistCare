@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.PorterDuff
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -19,10 +20,13 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.databinding.ActivityCameraBinding
+import com.yalantis.ucrop.UCrop
 import java.io.File
 
 class CameraActivity : AppCompatActivity() {
@@ -68,6 +72,7 @@ class CameraActivity : AppCompatActivity() {
             binding.flashButton.setImageResource(flashIcon)
             binding.flashButton.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN)
         }
+
         binding.switchCamera.setOnClickListener {
             cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
                 CameraSelector.DEFAULT_FRONT_CAMERA
@@ -76,8 +81,6 @@ class CameraActivity : AppCompatActivity() {
             }
             startCamera()
         }
-
-
     }
 
     override fun onResume() {
@@ -133,10 +136,15 @@ class CameraActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val intent = Intent(this@CameraActivity, ResultActivity::class.java)
-                    intent.putExtra(EXTRA_CAMERAX_IMAGE, output.savedUri.toString())
-                    startActivity(intent)
-                    finish()
+                    // Pass the captured image URI to UCrop
+                    val uCropUri = Uri.fromFile(photoFile)
+
+                    // Set up UCrop options
+                    val destinationUri = Uri.fromFile(createCustomTempFile(application))
+
+                    UCrop.of(uCropUri, destinationUri)
+                        .withOptions(getUCropOptions()) // UCrop options for toolbar, status bar, etc.
+                        .start(this@CameraActivity)
                 }
 
                 override fun onError(exc: ImageCaptureException) {
@@ -145,6 +153,19 @@ class CameraActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+    val toolbarColor = Color(0xFFF5F5F5)
+    val statusBarColor = Color(0xFF229799)
+    val activeControlColor = Color(0xFF48CFCB)
+    private fun getUCropOptions(): UCrop.Options {
+        val options = UCrop.Options().apply {
+            setFreeStyleCropEnabled(true)
+
+            setToolbarColor(toolbarColor.toArgb()) // Menggunakan warna hex yang dikonversi ke Argb
+            setStatusBarColor(statusBarColor.toArgb()) // Menggunakan warna hex yang dikonversi ke Argb
+            setActiveControlsWidgetColor(activeControlColor.toArgb())
+        }
+        return options
     }
 
     private fun createCustomTempFile(context: Context): File {
@@ -202,6 +223,27 @@ class CameraActivity : AppCompatActivity() {
                 startCamera()
             } else {
                 Toast.makeText(this, "Permission denied, camera won't work", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Handle UCrop result
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == UCrop.REQUEST_CROP && resultCode == RESULT_OK) {
+            val resultUri = UCrop.getOutput(data!!)
+            // Pass the cropped image URI to the result activity
+            val intent = Intent(this, ResultActivity::class.java)
+            intent.putExtra(EXTRA_CAMERAX_IMAGE, resultUri.toString())
+            startActivity(intent)
+            finish()
+        } else if (resultCode == UCrop.RESULT_ERROR) {
+            val cropError = UCrop.getError(data!!)
+            if (cropError != null) {
+                Toast.makeText(this, "Error cropping image: ${cropError.message}", Toast.LENGTH_SHORT).show()
+            }
+            if (cropError != null) {
+                Log.e(TAG, "UCrop error: ${cropError.message}")
             }
         }
     }

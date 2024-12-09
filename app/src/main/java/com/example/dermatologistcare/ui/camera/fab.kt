@@ -1,5 +1,6 @@
-package com.example.dermatologistcare.navigation
+package com.example.dermatologistcare.ui.camera
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,9 +30,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Density
@@ -40,8 +43,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dermatologistcare.R
-import com.example.dermatologistcare.ui.camera.CameraActivity
-import com.example.dermatologistcare.ui.camera.ResultActivity
+import com.example.dermatologistcare.navigation.Screen
+import com.yalantis.ucrop.UCrop
+import java.io.File
 
 @Composable
 fun SubtractedNavigationShape(
@@ -119,15 +123,45 @@ fun LiquidFabMenu(
 ) {
     val context = LocalContext.current
     val fabSize = 72.dp
+
+    // Launcher for cropping the image
+    val cropLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val croppedUri = UCrop.getOutput(result.data!!)
+            croppedUri?.let {
+                // Intent to start ResultActivity with the cropped image URI
+                val intent = Intent(context, ResultActivity::class.java).apply {
+                    putExtra(CameraActivity.EXTRA_CAMERAX_IMAGE, it.toString())
+                }
+                context.startActivity(intent)
+            }
+        }
+    }
+
+    // Launcher for gallery
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            // Create an intent to start ResultActivity with the gallery image URI
-            val intent = Intent(context, ResultActivity::class.java).apply {
-                putExtra(CameraActivity.EXTRA_CAMERAX_IMAGE, uri.toString())
+            val destinationUri = Uri.fromFile(File(context.cacheDir, "cropped_image.jpg"))
+
+            val toolbarColor = Color(0xFFF5F5F5)
+            val statusBarColor = Color(0xFF229799)
+            val activeControlColor = Color(0xFF48CFCB)
+
+            // Konfigurasi UCrop dengan warna dari hex
+            val options = UCrop.Options().apply {
+                setFreeStyleCropEnabled(true)
+                setToolbarColor(toolbarColor.toArgb()) // Menggunakan warna hex yang dikonversi ke Argb
+                setStatusBarColor(statusBarColor.toArgb()) // Menggunakan warna hex yang dikonversi ke Argb
+                setActiveControlsWidgetColor(activeControlColor.toArgb()) // Menggunakan warna hex yang dikonversi ke Argb
             }
-            context.startActivity(intent)
+            val cropIntent = UCrop.of(it, destinationUri)
+                .withOptions(options)
+                .getIntent(context)
+            cropLauncher.launch(cropIntent)
         }
     }
 
@@ -137,28 +171,23 @@ fun LiquidFabMenu(
         stiffness = Spring.StiffnessMedium
     )
 
-    // Animate FAB positions with spring
     val galleryFabOffset by animateFloatAsState(
         targetValue = if (isFabMenuExpanded) -150f else 0f,
         animationSpec = fabAnimationSpec
     )
-
     val cameraFabOffset by animateFloatAsState(
         targetValue = if (isFabMenuExpanded) 150f else 0f,
         animationSpec = fabAnimationSpec
     )
-
-    // Scale animation for FABs
     val galleryFabScale by animateFloatAsState(
         targetValue = if (isFabMenuExpanded) 1f else 0f,
         animationSpec = fabAnimationSpec
     )
-
     val cameraFabScale by animateFloatAsState(
         targetValue = if (isFabMenuExpanded) 1f else 0f,
         animationSpec = fabAnimationSpec
     )
-    // Rotation animation for the main FAB
+
     var rotationAngle by remember { mutableStateOf(0f) }
     val rotation by animateFloatAsState(
         targetValue = rotationAngle,
@@ -178,7 +207,7 @@ fun LiquidFabMenu(
             onClick = { galleryLauncher.launch("image/*") },
             modifier = Modifier
                 .size(fabSize)
-                .offset(y=(-fabSize / 1f),x =(fabSize / 1f))
+                .offset(y = -fabSize / 1f, x = fabSize / 1f)
                 .scale(galleryFabScale)
                 .align(Alignment.Center),
             containerColor = MaterialTheme.colorScheme.tertiary,
@@ -196,13 +225,13 @@ fun LiquidFabMenu(
         FloatingActionButton(
             onClick = {
                 onToggleMenu(!isFabMenuExpanded)
-                rotationAngle += 90f // Rotate the icon by 45 degrees on click
+                rotationAngle += 90f
             },
             modifier = Modifier
                 .size(fabSize)
                 .align(Alignment.Center)
                 .shadow(elevation = 8.dp, shape = CircleShape)
-                .rotate(rotation), // Apply the rotation
+                .rotate(rotation),
             containerColor = MaterialTheme.colorScheme.tertiary,
             shape = CircleShape
         ) {
@@ -219,7 +248,7 @@ fun LiquidFabMenu(
             onClick = { navController.navigate(Screen.Camera.route) },
             modifier = Modifier
                 .size(fabSize)
-                .offset(y=(-fabSize / 1f), x =(-fabSize / 1f))
+                .offset(y = -fabSize / 1f, x = -fabSize / 1f)
                 .scale(cameraFabScale)
                 .align(Alignment.Center),
             containerColor = MaterialTheme.colorScheme.tertiary,

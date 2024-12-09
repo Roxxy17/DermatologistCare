@@ -11,9 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -26,27 +24,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -57,10 +45,10 @@ import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.dermatologistcare.navigation.LiquidFabMenu
-import com.example.dermatologistcare.navigation.SubtractedNavigationShape
+import com.example.dermatologistcare.maps.HighlightApp
+import com.example.dermatologistcare.ui.camera.LiquidFabMenu
+import com.example.dermatologistcare.ui.camera.SubtractedNavigationShape
 import com.example.dermatologistcare.ui.camera.CameraActivity
-import com.example.dermatologistcare.ui.camera.ResultActivity
 import com.example.dermatologistcare.ui.home.Background
 import com.example.dermatologistcare.ui.home.HomeScreen
 import com.example.dermatologistcare.ui.login.CreateAccountScreen
@@ -108,6 +96,7 @@ splashScreen.setKeepOnScreenCondition{true}
                         composable("splash") {
                             if (isOnboardingCompleted.value) {
                                 LoginScreenWithNoAnimations(navController) // Pass navController to LoginScreen
+
                             } else {
                                 OnboardingScreen {
                                     onboardingUtils.setOnboardingCompleted()
@@ -290,7 +279,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                                 contentDescription = "Track",
                                 modifier = Modifier.size(24.dp)
                             )
-                        },
+                        },//d
                         label = {
                             if (currentRoute == Screen.Track.route){
                                 Text(
