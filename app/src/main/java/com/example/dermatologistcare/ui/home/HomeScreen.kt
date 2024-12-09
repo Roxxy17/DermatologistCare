@@ -8,6 +8,9 @@ import android.location.Geocoder
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,12 +57,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.MyApp
 import com.example.dermatologistcare.R
+import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.home.location.LocationPreferences
 import com.example.dermatologistcare.ui.home.weather.retrofit.WeatherApiService
+import com.example.dermatologistcare.ui.maps.GoogleMapView
+import com.example.dermatologistcare.ui.maps.HighlightApp
+import com.example.dermatologistcare.ui.maps.HighlightView
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
+import com.example.dermatologistcare.ui.theme.highlight
 import com.google.android.gms.location.LocationServices
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -94,13 +107,9 @@ fun Background(
     }
 }
 
-
-
-
-
 @Composable
 fun HomeScreen(
-    themeViewModel: ThemeViewModel = viewModel(),
+    themeViewModel: ThemeViewModel = viewModel(),navController: NavController
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -158,7 +167,11 @@ fun HomeScreen(
                             locationName.value = "$city, $province"
 
                             // Simpan lokasi baru ke SharedPreferences
-                            locationPreferences.saveLocation(locationName.value, latitude.value, longitude.value)
+                            locationPreferences.saveLocation(
+                                locationName.value,
+                                latitude.value,
+                                longitude.value
+                            )
                         }
                     } catch (e: Exception) {
                         locationName.value = "Gagal mendapatkan lokasi"
@@ -189,7 +202,8 @@ fun HomeScreen(
             }
 
             // Fetch air pollution data
-            val airPollutionResponse = service.getAirPollution(latitude.value, longitude.value, apiKey)
+            val airPollutionResponse =
+                service.getAirPollution(latitude.value, longitude.value, apiKey)
             if (airPollutionResponse.list.isNotEmpty()) {
                 aqi.value = airPollutionResponse.list[0].main.aqi
             } else {
@@ -210,9 +224,6 @@ fun HomeScreen(
         aqi.value in 201..300 -> "Very Unhealthy"
         else -> "Hazardous"
     }
-
-
-
 
     val isDarkMode = themeState.value.isDarkMode
 
@@ -305,7 +316,8 @@ fun HomeScreen(
 
                             }
                             val currentDate = remember {
-                                val dateFormat = SimpleDateFormat("EEEE - dd MMMM", Locale.getDefault())
+                                val dateFormat =
+                                    SimpleDateFormat("EEEE - dd MMMM", Locale.getDefault())
                                 dateFormat.format(Date())
                             }
 
@@ -402,7 +414,6 @@ fun HomeScreen(
             }
         }
 
-        // Rest of the existing HomeScreen code remains the same...
         Text(
             text = "Recent Diagnose",
             fontSize = 32.sp,
@@ -411,6 +422,7 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .padding(top = 8.dp, start = 16.dp, bottom = 0.dp)
         )
+
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -420,6 +432,7 @@ fun HomeScreen(
                 RecentItem(index)
             }
         }
+
         Text(
             text = "Hospital Near Me",
             fontSize = 20.sp,
@@ -428,14 +441,52 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .padding(top = 8.dp, start = 16.dp)
         )
-        LazyRow(
+
+        // Box containing HighlightApp and the bottom section
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            items(2) { index ->
-                HospitalItem(index)
+            // HighlightApp section with larger map
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth() // Ensure it fills the width
+                    .height(400.dp) // Larger map area
+            ) {
+                HighlightApp()
             }
+
+            // Spacer to add space between the map and the bottom section
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Bottom section after the map
+            Button(
+                onClick = { navController.navigate(Screen.MapsView.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(50.dp) // Adjust height as needed
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable {
+                        // Navigating to the MapsView screen
+                        navController.navigate(Screen.MapsView.route)
+                    },
+            ) {
+                Text(
+                    text = "See More Hospitals", // Button text
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.tertiary // Text color to contrast the background
+                )
+            }
+
+            // You can add more UI elements here (e.g., more buttons, text)
         }
     }
 }
@@ -444,28 +495,35 @@ fun HomeScreen(
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
 @Composable
-fun RecentItem (index: Int){
-    Box(modifier = Modifier
-        .padding(10.dp)
-        .fillMaxWidth(),
+fun RecentItem(index: Int) {
+    Box(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth(),
 
-
-
-        ){
+        ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .width(250.dp)
                 .height(110.dp) // Set a fixed height for the card
-                .shadow(elevation = 2.dp, shape = RoundedCornerShape( bottomEnd = 10.dp, topEnd = 10.dp , bottomStart = 10.dp)),
-            shape = RoundedCornerShape( bottomEnd = 10.dp,topEnd = 10.dp, bottomStart = 10.dp)
-            ,
+                .shadow(
+                    elevation = 2.dp,
+                    shape = RoundedCornerShape(
+                        bottomEnd = 10.dp,
+                        topEnd = 10.dp,
+                        bottomStart = 10.dp
+                    )
+                ),
+            shape = RoundedCornerShape(bottomEnd = 10.dp, topEnd = 10.dp, bottomStart = 10.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0x424242)
             )
         ) {
-            Row(modifier = Modifier.padding(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 // Title of the resource
                 Image(
                     painter = painterResource(id = R.drawable.recent_diagnose),
@@ -473,9 +531,7 @@ fun RecentItem (index: Int){
                     modifier = Modifier
                         .width(78.dp)
                         .height(89.dp)
-                        .clip(RoundedCornerShape(8.dp))
-
-                    ,
+                        .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop
 
                 )
@@ -499,10 +555,10 @@ fun RecentItem (index: Int){
                         color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Row (
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                    ){
+                    ) {
                         Text(
                             text = "19.19",
                             fontSize = 10.sp,
@@ -519,92 +575,93 @@ fun RecentItem (index: Int){
             }
         }
     }
-
-
 }
-@Composable
-fun HospitalItem(index: Int) {
-    Box(modifier = Modifier
-        .padding(start = 16.dp)
-        .fillMaxWidth()
-      ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
 
-                .width(200.dp)
-                .height(300.dp) // Set a fixed height for the card
-                .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
 
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight(),
-            ) {
-                Box {  // Added Box to overlay bookmark icon on image
-                    Image(
-                        painter = painterResource(id = R.drawable.rs),
-                        contentDescription = "Home Icon",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(bottomEnd = 20.dp)),
-                        contentScale = ContentScale.Crop
-
-                    )
-
-                    // Bookmark Icon
-                    IconButton(
-                        onClick = { /* Add your bookmark action here */ },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.bookmarked),
-                            contentDescription = "Bookmark",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "RSA UGM",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "OPEN 24 HOURS",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
-                        )
-                        Text(
-                            text = "2.3KM",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                }
-
-            }
-        }
-    }
-}
+//}
+//@Composable
+//fun HospitalItem(index: Int) {
+//    Box(modifier = Modifier
+//        .padding(start = 16.dp)
+//        .fillMaxWidth()
+//      ) {
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//
+//                .width(200.dp)
+//                .height(300.dp) // Set a fixed height for the card
+//                .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
+//            shape = RoundedCornerShape(8.dp),
+//            colors = CardDefaults.cardColors(
+//                containerColor = MaterialTheme.colorScheme.surface,
+//                contentColor = MaterialTheme.colorScheme.onSurface
+//            )
+//
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxHeight(),
+//            ) {
+//                Box {  // Added Box to overlay bookmark icon on image
+//                    Image(
+//                        painter = painterResource(id = R.drawable.rs),
+//                        contentDescription = "Home Icon",
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .height(200.dp)
+//                            .clip(RoundedCornerShape(bottomEnd = 20.dp)),
+//                        contentScale = ContentScale.Crop
+//
+//                    )
+//
+//                    // Bookmark Icon
+//                    IconButton(
+//                        onClick = { /* Add your bookmark action here */ },
+//                        modifier = Modifier
+//                            .align(Alignment.TopEnd)
+//
+//                    ) {
+//                        Icon(
+//                            painter = painterResource(id = R.drawable.bookmarked),
+//                            contentDescription = "Bookmark",
+//                            tint = MaterialTheme.colorScheme.secondary
+//                        )
+//                    }
+//                }
+//
+//                Column(modifier = Modifier.padding(16.dp)) {
+//                    Text(
+//                        text = "RSA UGM",
+//                        fontWeight = FontWeight.Bold,
+//                        fontSize = 20.sp,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//
+//                    HorizontalDivider(
+//                        color = MaterialTheme.colorScheme.tertiary,
+//                        modifier = Modifier.padding(vertical = 8.dp)
+//                    )
+//
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.SpaceBetween
+//                    ) {
+//                        Text(
+//                            text = "OPEN 24 HOURS",
+//                            fontWeight = FontWeight.Bold,
+//                            fontSize = 10.sp,
+//                        )
+//                        Text(
+//                            text = "2.3KM",
+//                            fontSize = 10.sp,
+//                            color = MaterialTheme.colorScheme.tertiary
+//                        )
+//                    }
+//                }
+//
+//            }
+//        }
+//    }
+//}
 

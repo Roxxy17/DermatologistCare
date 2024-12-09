@@ -99,10 +99,10 @@ fun LoginScreenWithNoAnimations(navController: NavHostController) {
 
                     // Tombol login tanpa animasi
                     Button(
-                        onClick = { /* Handle password login */ },
+                        onClick = { navController.navigate("login_account") }, // Perbaikan di sini
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface),
                     ) {
                         Text(
                             text = "Sign in with password",

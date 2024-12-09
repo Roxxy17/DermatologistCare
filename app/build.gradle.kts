@@ -114,6 +114,5 @@ dependencies {
     implementation("com.google.maps.android:android-maps-utils:2.2.0") // Untuk Maps Utilities
     implementation("com.google.maps.android:maps-ktx:3.3.0") // Untuk Maps KTX
 
-
     implementation (libs.androidx.material.icons.extended)
 }

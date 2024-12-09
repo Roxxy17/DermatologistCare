@@ -4,6 +4,9 @@
     <CLASSES>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.3/89e34400f452dab68fbb3caa66d854c89aaafa07/kotlinx-coroutines-test-jvm-1.7.3.jar!/" />
     </CLASSES>
+    <DOCUMENTATION>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.3/d8e9dc2de9e5126aa402d8ce2d709e267649b1b0/kotlinx-coroutines-test-jvm-1.7.3-javadoc.jar!/" />
+    </DOCUMENTATION>
     <JAVADOC>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-test-jvm/1.7.3/d8e9dc2de9e5126aa402d8ce2d709e267649b1b0/kotlinx-coroutines-test-jvm-1.7.3-javadoc.jar!/" />
     </JAVADOC>
