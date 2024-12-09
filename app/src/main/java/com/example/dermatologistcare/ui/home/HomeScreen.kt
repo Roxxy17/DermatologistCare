@@ -480,12 +480,13 @@ fun HomeScreen(
                     },
             ) {
                 Text(
-                    text = "See More Hospitals", // Button text
+                    text = "See Nearby Hospitals", // Button text
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.tertiary // Text color to contrast the background
                 )
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
             // You can add more UI elements here (e.g., more buttons, text)
         }
     }
