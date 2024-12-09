@@ -3,10 +3,8 @@ package com.example.dermatologistcare.ui.home
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.location.Geocoder
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,25 +55,17 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.dermatologistcare.MyApp
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
-import com.example.dermatologistcare.ui.home.location.LocationPreferences
-import com.example.dermatologistcare.ui.home.weather.retrofit.WeatherApiService
-import com.example.dermatologistcare.ui.maps.GoogleMapView
+import com.example.dermatologistcare.ui.home.weather.LocationViewModel
+import com.example.dermatologistcare.ui.home.weather.retrofit.WeatherApiConfig
 import com.example.dermatologistcare.ui.maps.HighlightApp
-import com.example.dermatologistcare.ui.maps.HighlightView
-import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
-import com.example.dermatologistcare.ui.theme.highlight
+import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 import com.google.android.gms.location.LocationServices
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import java.util.Date
 import java.util.Locale
 
@@ -110,6 +99,7 @@ fun Background(
 @Composable
 fun HomeScreen(
     themeViewModel: ThemeViewModel = viewModel(),navController: NavController
+    , locationViewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -117,17 +107,29 @@ fun HomeScreen(
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     // Location states
-    val locationName = remember { mutableStateOf("Memuat lokasi...") }
-    val longitude = remember { mutableStateOf(0.0) }
-    val latitude = remember { mutableStateOf(0.0) }
+    val locationName = locationViewModel.locationName.value
+    val latitude = locationViewModel.latitude.value
+    val longitude = locationViewModel.longitude.value
+    val temperature = locationViewModel.temperature.value
+    val aqi = locationViewModel.aqi.value
 
-    val aqi = remember { mutableStateOf<Int>(0) }
+    val uvIndex = locationViewModel.uvIndex.value // Misalnya ini adalah Double val uvIndexFloat = uvIndex.toFloat()
+    val currentHour = LocalDateTime.now().hour
 
-    var temperature = remember { mutableStateOf("") }
-    val locationPreferences = LocationPreferences(context)
-    val apiKey = "a34d8171b6400aacac7303f6fc160aef"
+    // Determine whether it's day or night
+    val isDayTime = currentHour in 6..18 // Daytime is between 6 AM and 6 PM
 
+    // Choose the appropriate icon based on the time of day
+    val weatherCondition = locationViewModel.weatherMain.value
 
+// Menentukan ikon berdasarkan kondisi cuaca
+    val iconResource = when (weatherCondition) {
+        "Clear" -> if (isDayTime) R.drawable.ic_sun else R.drawable.ic_bulan
+        "Clouds" -> R.drawable.ic_cloud // Ikon awan jika mendung
+        "Rain" -> R.drawable.ic_rain // Ikon hujan jika ada hujan
+        "Snow" -> R.drawable.ic_snow // Ikon salju jika ada salju
+        else -> R.drawable.ic_sun // Ikon bulan jika tidak diketahui
+    }
     // Location fetching function
     fun getDeviceLocation() {
         if (ActivityCompat.checkSelfPermission(
@@ -147,84 +149,98 @@ fun HomeScreen(
         fusedLocationClient.lastLocation
             .addOnSuccessListener { locationResult ->
                 locationResult?.let {
-                    longitude.value = it.longitude
-                    latitude.value = it.latitude
-                    Log.d("Location", "Longitude: ${it.longitude}, Latitude: ${it.latitude}")
+                    val newLongitude = it.longitude
+                    val newLatitude = it.latitude
+                    Log.d("Location", "Longitude: $newLongitude, Latitude: $newLatitude")
 
                     // Use Geocoder to get city and province
                     val geocoder = Geocoder(context, Locale.getDefault())
                     try {
-                        val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                        val addresses = geocoder.getFromLocation(newLatitude, newLongitude, 1)
                         if (!addresses.isNullOrEmpty()) {
                             val address = addresses[0]
                             val city = when {
-                                !address.subAdminArea.isNullOrBlank() -> address.subAdminArea // Kabupaten/Kota
-                                !address.locality.isNullOrBlank() -> address.locality // Kota
-                                !address.adminArea.isNullOrBlank() -> address.adminArea // Provinsi fallback
+                                !address.subAdminArea.isNullOrBlank() -> address.subAdminArea
+                                !address.locality.isNullOrBlank() -> address.locality
+                                !address.adminArea.isNullOrBlank() -> address.adminArea
                                 else -> "Lokasi Tidak Dikenal"
                             }
                             val province = addresses[0].adminArea ?: "Provinsi Tidak Dikenal"
-                            locationName.value = "$city, $province"
+                            val location = "$city, $province"
 
-                            // Simpan lokasi baru ke SharedPreferences
-                            locationPreferences.saveLocation(
-                                locationName.value,
-                                latitude.value,
-                                longitude.value
-                            )
+                            // Update location in ViewModel
+                            locationViewModel.updateLocation(location, newLatitude, newLongitude)
+
                         }
                     } catch (e: Exception) {
-                        locationName.value = "Gagal mendapatkan lokasi"
+                        locationViewModel.updateLocation("Gagal mendapatkan lokasi", 0.0, 0.0)
                     }
                 }
             }
             .addOnFailureListener {
-                locationName.value = "Gagal mendapatkan lokasi"
+                locationViewModel.updateLocation("Gagal mendapatkan lokasi", 0.0, 0.0)
             }
     }
 
     // Fetch weather and air quality data when location changes
-    LaunchedEffect(latitude.value, longitude.value) {
+    LaunchedEffect(latitude, longitude) {
         try {
-            val retrofit = Retrofit.Builder()
-                .baseUrl("https://api.openweathermap.org/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-
-            val service = retrofit.create(WeatherApiService::class.java)
+            val retrofit = WeatherApiConfig.provideRetrofit()
+            // Get Retrofit instance from ApiConfig
+            val service = WeatherApiConfig.provideWeatherApiService(retrofit)
 
             // Fetch weather data
-            val weatherResponse = service.getWeather(latitude.value, longitude.value, apiKey)
-            if (weatherResponse.main.temp != null) {
-                temperature.value = "${weatherResponse.main.temp}°C"
-            } else {
-                temperature.value = "Error"
-            }
+            val weatherResponse = service.getWeather(latitude, longitude, WeatherApiConfig.API_KEY)
+            val temp = weatherResponse.main.temp?.let { "${it}°C" } ?: "Error"
+            val weatherMain = weatherResponse.weather.firstOrNull()?.main ?: "Unknown"
+            Log.d("HomeScreen", "Weather Response: $weatherResponse")
 
+            locationViewModel.updateWeather(temp, 0)
+            locationViewModel.updateWeatherMain(weatherMain)
             // Fetch air pollution data
             val airPollutionResponse =
-                service.getAirPollution(latitude.value, longitude.value, apiKey)
-            if (airPollutionResponse.list.isNotEmpty()) {
-                aqi.value = airPollutionResponse.list[0].main.aqi
-            } else {
-                aqi.value = 0  // Error case or fallback value
+                service.getAirPollution(latitude, longitude, WeatherApiConfig.API_KEY)
+            val airQualityIndex = airPollutionResponse.list.firstOrNull()?.main?.aqi ?: 0
+            locationViewModel.updateWeather(temp, airQualityIndex)
+
+            val uvIndexResponse = service.getUvIndex(latitude, longitude, WeatherApiConfig.API_KEY)
+            locationViewModel.updateUvIndex(uvIndexResponse.value?.toFloat() ?: 0f)
+
+            Log.d("HomeScreen", "UV Index Response: $uvIndexResponse")
+
+            val uvIndexCategory = when {
+                uvIndex in 0.0..2.0 -> "Low"
+                uvIndex in 3.0..5.0 -> "Moderate"
+                uvIndex in 6.0..7.0 -> "High"
+                uvIndex in 8.0..10.0 -> "Very High"
+                uvIndex > 10.0 -> "Extreme"
+                else -> "Unknown"
             }
         } catch (e: Exception) {
-            temperature.value = "Error"
-            aqi.value = 0
-            Toast.makeText(context, "Error fetching data: ${e.message}", Toast.LENGTH_SHORT).show()
+
         }
     }
     val aqiCategory = when {
-        aqi.value == 0 -> "Error"
-        aqi.value <= 50 -> "Good"
-        aqi.value in 51..100 -> "Moderate"
-        aqi.value in 101..150 -> "Unhealthy for Sensitive Groups"
-        aqi.value in 151..200 -> "Unhealthy"
-        aqi.value in 201..300 -> "Very Unhealthy"
+        aqi == 0 -> "Error"
+        aqi <= 50 -> "Good"
+        aqi in 51..100 -> "Moderate"
+        aqi in 101..150 -> "Unhealthy for Sensitive Groups"
+        aqi in 151..200 -> "Unhealthy"
+        aqi in 201..300 -> "Very Unhealthy"
         else -> "Hazardous"
     }
+    val uvIndexCategory = when {
+        uvIndex in 0.0..2.0 -> "Low"
+        uvIndex in 3.0..5.0 -> "Moderate"
+        uvIndex in 6.0..7.0 -> "High"
+        uvIndex in 8.0..10.0 -> "Very High"
+        uvIndex > 10.0 -> "Extreme"
+        else -> "Unknown"
+    }
 
+    LaunchedEffect(true) {
+        getDeviceLocation()
+    }
     val isDarkMode = themeState.value.isDarkMode
 
     // Choose color based on dark/light theme
@@ -273,14 +289,34 @@ fun HomeScreen(
                             .fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_bulan),
-                            contentDescription = "Home Icon",
+                        Column(
                             modifier = Modifier
-                                .size(100.dp)
-                                .weight(1f),
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
+                                .weight(1f)
+                                .align(Alignment.CenterVertically),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Icon
+                            Icon(
+                                painter = painterResource(id = iconResource),
+                                contentDescription = "Home Icon",
+                                modifier = Modifier.size(100.dp), // Adjust size as needed
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(modifier = Modifier.height(1.dp)) // Add space between the icon and text
+
+                            // Weather Condition Text
+                            Text(
+                                text = weatherCondition, // The weather condition, e.g., "Clear", "Rain"
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Light,
+                                fontFamily = coolveticaFontFamily,
+                                color = MaterialTheme.colorScheme.tertiary // Change color as needed
+                            )
+                        }
+
+
+                        // You can optionally add more information, like temperature, etc.
+
                         Column(
                             modifier = Modifier.weight(2f)
                         ) {
@@ -294,8 +330,9 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = locationName.value,
-                                    fontWeight = FontWeight.Bold,
+                                    text = locationName,
+                                    fontWeight = FontWeight.Light,
+                                    fontFamily = coolveticaFontFamily,
                                     fontSize = 14.sp,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -307,7 +344,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(24.dp)
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_map_pin), // Gunakan ikon refresh
+                                        painter = painterResource(id = R.drawable.refresh), // Gunakan ikon refresh
                                         contentDescription = "Refresh Location",
                                         tint = MaterialTheme.colorScheme.tertiary
                                     )
@@ -325,6 +362,8 @@ fun HomeScreen(
                                 text = currentDate,
                                 fontSize = 14.sp,
                                 modifier = Modifier.fillMaxWidth()
+                                ,fontWeight = FontWeight.Light,
+                                fontFamily = coolveticaFontFamily,
                             )
                             Card(
                                 colors = CardDefaults.cardColors(
@@ -337,16 +376,20 @@ fun HomeScreen(
                                     Text(
                                         text = "AQI",
                                         fontSize = 14.sp,
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                                fontWeight = FontWeight.Light,
+                                        fontFamily = coolveticaFontFamily,
                                     )
                                     Text(
-                                        text = "$aqiCategory (${aqi.value})",
+                                        text = "$aqiCategory (${aqi})",
                                         fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.fillMaxWidth()
+
+                                        modifier = Modifier.fillMaxWidth(),
+                                        fontWeight = FontWeight.Light,
+                                        fontFamily = coolveticaFontFamily,
                                     )
                                     LinearProgressIndicator(
-                                        progress = aqi.value.toFloat() / 20f,
+                                        progress = aqi.toFloat() / 20f,
                                         color = MaterialTheme.colorScheme.tertiary,
                                         trackColor = cardColor.copy(alpha = 0.25f),
                                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -374,11 +417,14 @@ fun HomeScreen(
                                             text = "UV Index",
                                             fontSize = 14.sp,
                                             modifier = Modifier
+                                            ,fontWeight = FontWeight.Light,
+                                            fontFamily = coolveticaFontFamily,
                                         )
                                         Text(
-                                            text = "Low",
+                                            text = "${locationViewModel.uvIndex.value} - ${uvIndexCategory}",
                                             fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.Light,
+                                            fontFamily = coolveticaFontFamily,
                                             modifier = Modifier
                                         )
                                     }
@@ -397,13 +443,17 @@ fun HomeScreen(
                                         Text(
                                             text = "Temperature",
                                             fontSize = 14.sp,
-                                            modifier = Modifier
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Light,
+                                            fontFamily = coolveticaFontFamily,
                                         )
                                         Text(
-                                            text = "${temperature.value}",
+                                            text = "${locationViewModel.temperature.value}",
                                             fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier
+
+                                            modifier = Modifier,
+                                            fontWeight = FontWeight.Light,
+                                            fontFamily = coolveticaFontFamily,
                                         )
                                     }
                                 }
@@ -417,7 +467,8 @@ fun HomeScreen(
         Text(
             text = "Recent Diagnose",
             fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Light,
+            fontFamily = coolveticaFontFamily,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, start = 16.dp, bottom = 0.dp)
@@ -435,8 +486,9 @@ fun HomeScreen(
 
         Text(
             text = "Hospital Near Me",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Light,
+            fontFamily = coolveticaFontFamily,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, start = 16.dp)
@@ -481,7 +533,9 @@ fun HomeScreen(
             ) {
                 Text(
                     text = "See Nearby Hospitals", // Button text
-                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = coolveticaFontFamily,
                     color = MaterialTheme.colorScheme.tertiary // Text color to contrast the background
                 )
             }
@@ -542,7 +596,8 @@ fun RecentItem(index: Int) {
                     Text(
                         text = "Chikenpox",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = coolveticaFontFamily,
                     )
                     Text(
                         text = "The wound has started to dry out and has a significant healing rate.",
@@ -550,6 +605,8 @@ fun RecentItem(index: Int) {
                         maxLines = 3,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         lineHeight = 10.sp,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = coolveticaFontFamily,
                         modifier = Modifier.fillMaxWidth()
                     )
                     HorizontalDivider(
@@ -577,92 +634,4 @@ fun RecentItem(index: Int) {
         }
     }
 }
-
-
-//}
-//@Composable
-//fun HospitalItem(index: Int) {
-//    Box(modifier = Modifier
-//        .padding(start = 16.dp)
-//        .fillMaxWidth()
-//      ) {
-//        Card(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//
-//                .width(200.dp)
-//                .height(300.dp) // Set a fixed height for the card
-//                .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
-//            shape = RoundedCornerShape(8.dp),
-//            colors = CardDefaults.cardColors(
-//                containerColor = MaterialTheme.colorScheme.surface,
-//                contentColor = MaterialTheme.colorScheme.onSurface
-//            )
-//
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxHeight(),
-//            ) {
-//                Box {  // Added Box to overlay bookmark icon on image
-//                    Image(
-//                        painter = painterResource(id = R.drawable.rs),
-//                        contentDescription = "Home Icon",
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .height(200.dp)
-//                            .clip(RoundedCornerShape(bottomEnd = 20.dp)),
-//                        contentScale = ContentScale.Crop
-//
-//                    )
-//
-//                    // Bookmark Icon
-//                    IconButton(
-//                        onClick = { /* Add your bookmark action here */ },
-//                        modifier = Modifier
-//                            .align(Alignment.TopEnd)
-//
-//                    ) {
-//                        Icon(
-//                            painter = painterResource(id = R.drawable.bookmarked),
-//                            contentDescription = "Bookmark",
-//                            tint = MaterialTheme.colorScheme.secondary
-//                        )
-//                    }
-//                }
-//
-//                Column(modifier = Modifier.padding(16.dp)) {
-//                    Text(
-//                        text = "RSA UGM",
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 20.sp,
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    HorizontalDivider(
-//                        color = MaterialTheme.colorScheme.tertiary,
-//                        modifier = Modifier.padding(vertical = 8.dp)
-//                    )
-//
-//                    Row(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.SpaceBetween
-//                    ) {
-//                        Text(
-//                            text = "OPEN 24 HOURS",
-//                            fontWeight = FontWeight.Bold,
-//                            fontSize = 10.sp,
-//                        )
-//                        Text(
-//                            text = "2.3KM",
-//                            fontSize = 10.sp,
-//                            color = MaterialTheme.colorScheme.tertiary
-//                        )
-//                    }
-//                }
-//
-//            }
-//        }
-//    }
-//}
 

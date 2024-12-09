@@ -38,17 +38,9 @@ fun TrackScreen() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Track Screen",
-                fontSize = 44.sp,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineMedium
-            )
+
             ConditionList()  // Add the condition list here
-        }
+
     }
 }
 
