@@ -608,18 +608,3 @@ fun HospitalItem(index: Int) {
     }
 }
 
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO )
-@Composable
-fun HomeScreenPreview() {
-    DermatologistCareTheme() {
-        HomeScreen()
-    }
-}
-
-@Preview(name = "Phone Landscape", device = "spec:width=891dp,height=411dp")
-@Composable
-fun PhoneLandscapePreview() {
-    MyApp()
-}
-
