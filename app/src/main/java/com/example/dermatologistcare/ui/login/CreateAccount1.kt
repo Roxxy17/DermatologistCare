@@ -45,7 +45,7 @@ fun CreateAccountScreen(navController: NavHostController) {
     DermatologistCareTheme(darkTheme = isDarkMode) {
 
 
-    // Mengatur state untuk animasi halaman pertama kali
+        // Mengatur state untuk animasi halaman pertama kali
         var pageVisible by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
             // Menunggu halaman pertama kali dirender, kemudian melakukan animasi
@@ -63,6 +63,8 @@ fun CreateAccountScreen(navController: NavHostController) {
             var passwordVisible by remember { mutableStateOf(false) }
             var rememberMe by remember { mutableStateOf(false) }
             var isVisible by remember { mutableStateOf(true) } // Untuk animasi visibilitas
+            var otp by remember { mutableStateOf("") }
+            var otpSent by remember { mutableStateOf(false) } // State untuk cek apakah OTP sudah dikirim
 
             // Animasi padding
             val animatedPadding by animateDpAsState(
@@ -131,9 +133,9 @@ fun CreateAccountScreen(navController: NavHostController) {
                     label = { Text(text = "Username",
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                fontFamily = coolveticaFontFamily,
+                        fontFamily = coolveticaFontFamily,
                         fontWeight = FontWeight.Light
-                        ) },
+                    ) },
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_akun),
@@ -215,6 +217,39 @@ fun CreateAccountScreen(navController: NavHostController) {
                     colors = TextFieldDefaults.textFieldColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                 )
 
+                // Kirim OTP Button
+                if (email.isNotBlank() && password.isNotBlank() && password.isNotBlank() && !otpSent) {
+                    Button(
+                        onClick = { otpSent = true }, // Handle kirim OTP
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text("Kirim OTP")
+                    }
+                }
+
+                // OTP Input muncul jika otpSent true
+                if (otpSent) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextField(
+                        value = otp,
+                        onValueChange = { otp = it },
+                        label = { Text("Masukkan OTP") },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_lock),
+                                contentDescription = "OTP Icon"
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.textFieldColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                    )
+                }
+
                 // Remember me checkbox
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -248,9 +283,9 @@ fun CreateAccountScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    /*enabled = username.isNotBlank() &&
+                    enabled = username.isNotBlank() &&
                             email.isNotBlank() &&
-                            password.isNotBlank() ,*/
+                            password.isNotBlank() ,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                 ) {
@@ -299,7 +334,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                     Text(text = "Already have an account?", color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = coolveticaFontFamily,
                         fontWeight = FontWeight.Light
-                                ,fontSize = 20.sp)
+                        ,fontSize = 20.sp)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Sign in",
@@ -307,7 +342,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                         fontFamily = coolveticaFontFamily,
                         fontWeight = FontWeight.Light,
                         fontSize = 20.sp,
-                        modifier = Modifier.clickable {  navController.navigate("login_screen")}
+                        modifier = Modifier.clickable {  navController.navigate("login_account")}
                     )
                 }
             }
@@ -340,6 +375,6 @@ fun SocialMediaButton(iconResId: Int, scale: Float) {
 @Preview
 @Composable
 fun PreviewCreate() {
-    val navController = rememberNavController()
+    val navController = rememberNavController()  // Mock NavController
     CreateAccountScreen(navController = navController)
 }

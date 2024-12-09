@@ -34,7 +34,7 @@
             android:theme="@style/Theme.AppCompat"
 
             android:exported="false" />
-        <activity android:name=".maps.HighlightActivity"
+        <activity android:name=".ui.maps.HighlightActivity"
             android:label="Highlight Activity"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar" />
         <activity

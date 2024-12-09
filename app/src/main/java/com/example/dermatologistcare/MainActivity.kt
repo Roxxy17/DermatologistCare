@@ -45,14 +45,16 @@ import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.dermatologistcare.maps.HighlightApp
+import com.example.dermatologistcare.ui.maps.HighlightApp
 import com.example.dermatologistcare.ui.camera.LiquidFabMenu
 import com.example.dermatologistcare.ui.camera.SubtractedNavigationShape
 import com.example.dermatologistcare.ui.camera.CameraActivity
 import com.example.dermatologistcare.ui.home.Background
 import com.example.dermatologistcare.ui.home.HomeScreen
 import com.example.dermatologistcare.ui.login.CreateAccountScreen
+import com.example.dermatologistcare.ui.login.LoginAccount
 import com.example.dermatologistcare.ui.login.LoginScreenWithNoAnimations
+import com.example.dermatologistcare.ui.maps.GoogleMapView
 
 import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
@@ -96,7 +98,6 @@ splashScreen.setKeepOnScreenCondition{true}
                         composable("splash") {
                             if (isOnboardingCompleted.value) {
                                 LoginScreenWithNoAnimations(navController) // Pass navController to LoginScreen
-
                             } else {
                                 OnboardingScreen {
                                     onboardingUtils.setOnboardingCompleted()
@@ -110,6 +111,9 @@ splashScreen.setKeepOnScreenCondition{true}
                         }
                         composable("login_screen") {
                             LoginScreenWithNoAnimations(navController) // Display LoginScreen when the route is "login_screen"
+                        }
+                        composable("login_account") {
+                            LoginAccount(navController) // Display LoginScreen when the route is "login_screen"
                         }
                         composable("my_app") {
                             MyApp()
@@ -390,7 +394,7 @@ fun MyApp(modifier: Modifier = Modifier) {
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(Screen.Home.route) { HomeScreen() }
+            composable(Screen.Home.route) { HomeScreen(navController = navController) }
             composable(Screen.Track.route) { TrackScreen() }
             composable(Screen.Camera.route) { navBackStackEntry ->
                 val context = LocalContext.current
@@ -403,7 +407,7 @@ fun MyApp(modifier: Modifier = Modifier) {
 
             composable(Screen.Resource.route) { ResourceScreen() }
             composable(Screen.Profile.route) { ProfileScreen() }
-
+            composable(Screen.MapsView.route) { GoogleMapView() }
 
 
         }
