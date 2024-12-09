@@ -19,5 +19,10 @@ interface WeatherApiService {
         @Query("appid") apiKey: String
     ): AirPollutionResponse
 
-
+    @GET("data/2.5/uvi")
+    suspend fun getUvIndex(
+        @Query("lat") latitude: Double,
+        @Query("lon") longitude: Double,
+        @Query("appid") apiKey: String
+    ): UVIndexResponse
 }

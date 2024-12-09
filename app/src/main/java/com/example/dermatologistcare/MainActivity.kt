@@ -60,6 +60,7 @@ import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import com.example.dermatologistcare.ui.profile.ProfileScreen
 import com.example.dermatologistcare.ui.resource.ResourceScreen
+import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -177,27 +178,23 @@ fun MyApp(modifier: Modifier = Modifier) {
                 title = {
                     Column{
                         Text(
-                            text = "Hello, Atmint!",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            text = if (currentRoute == Screen.Track.route) {
+                                "Track"
+                                } else if (currentRoute == Screen.Resource.route) {
+                                "Resource"
+                            } else {
+                                "Hello, Atmint!" // $username
+                            },
+                            fontSize =32.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = coolveticaFontFamily,
                         )
-                        Text(
-                            text = "Welcome back to your dashboard.",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = Color.Gray
-                        )
+
                     }
                 },
                 actions = {
-                    // Notification Icon
-                    IconButton(onClick = {  }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_notification), // Replace with your notification icon
-                            contentDescription = "Notifications",
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
+
+
                     // Profile Image
                     IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
                         Image(
