@@ -67,8 +67,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
-
     // Jetpack Compose Integration/NAVIGATION
     implementation (libs.androidx.navigation.compose)
     implementation (libs.androidx.runtime.livedata)
@@ -116,4 +114,11 @@ dependencies {
     implementation("com.google.maps.android:maps-ktx:3.3.0") // Untuk Maps KTX
 
     implementation (libs.androidx.material.icons.extended)
+
+    implementation (libs.ktor.client.core.v230)
+    implementation (libs.ktor.client.android.v230)
+    implementation (libs.ktor.client.content.negotiation) // For ContentNegotiation
+    implementation (libs.ktor.serialization.kotlinx.json)  // For JSON serialization
+    implementation (libs.kotlinx.serialization.json.v151) // Kotlinx serialization
+
 }
