@@ -1,5 +1,6 @@
 package com.example.dermatologistcare
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,8 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -34,12 +38,24 @@ class TrackScreenActivity : ComponentActivity() {
 
 @Composable
 fun TrackScreen() {
+    val context = LocalContext.current
+    val sharedPref = context.getSharedPreferences("DermaCarePrefs", Context.MODE_PRIVATE)
+
+    // Read tracking state from SharedPreferences
+    val isTracking = remember {
+        mutableStateOf(sharedPref.getBoolean("isTracking", false))
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
 
-            ConditionList()  // Add the condition list here
+        // Hanya tampilkan ConditionList jika tracking aktif
+        if (isTracking.value) {
+            ConditionList()
+        } else {
+            Text("Start tracking by clicking 'Track' in the previous screen")
+        }
 
     }
 }
