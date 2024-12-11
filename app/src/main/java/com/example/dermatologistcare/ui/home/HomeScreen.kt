@@ -64,9 +64,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
+import com.example.dermatologistcare.ui.home.maps.HighlightApp
 import com.example.dermatologistcare.ui.home.weather.LocationViewModel
 import com.example.dermatologistcare.ui.home.weather.retrofit.WeatherApiConfig
-import com.example.dermatologistcare.ui.maps.HighlightApp
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 import com.google.android.gms.location.LocationServices
 import java.text.SimpleDateFormat

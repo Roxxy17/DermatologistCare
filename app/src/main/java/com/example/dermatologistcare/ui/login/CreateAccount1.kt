@@ -34,8 +34,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.ui.home.HomeScreen
+import com.example.dermatologistcare.ui.login.data.NetworkClient
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +48,57 @@ fun CreateAccountScreen(navController: NavHostController) {
     val scrollState = rememberScrollState()
     DermatologistCareTheme(darkTheme = isDarkMode) {
 
+        var username by remember { mutableStateOf("") }
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
+        var rememberMe by remember { mutableStateOf(false) }
+        var isVisible by remember { mutableStateOf(true) } // Untuk animasi visibilitas
+        var otp by remember { mutableStateOf("") }
+        var otpSent by remember { mutableStateOf(false) }
+        var isLoading by remember { mutableStateOf(false) }
+        var registrationMessage by remember { mutableStateOf("") }
+
+        // Function to handle sending OTP
+        val onSendOtpClicked = {
+            isLoading = true
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val response = NetworkClient.registerUser(email, username, password)
+                    registrationMessage = response // Show server response
+                    otpSent = true // OTP sent, show OTP field
+                } catch (e: Exception) {
+                    registrationMessage = "Error: ${e.message}"
+                } finally {
+                    isLoading = false
+                }
+            }
+        }
+
+        // Function to verify OTP and complete registration
+        val onVerifyOtpClicked = {
+            if (otp.isBlank()) {
+                registrationMessage = "Please enter the OTP."
+            } else {
+                isLoading = true
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response = NetworkClient.verifyOtp(email, otp)
+                        registrationMessage = response // Show server response
+                        if (response == "Registration Successful") {
+                            // Assuming the backend returns JWT token on successful registration
+                            val token = response // Replace with actual token extraction
+                            // Store token for future use (e.g., SharedPreferences, ViewModel)
+                            navController.navigate("my_app")
+                        }
+                    } catch (e: Exception) {
+                        registrationMessage = "Registration failed: ${e.message}"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            }
+        }
 
         // Mengatur state untuk animasi halaman pertama kali
         var pageVisible by remember { mutableStateOf(false) }
@@ -57,14 +112,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .background(Color.White)
         ) {
-            var username by remember { mutableStateOf("") }
-            var email by remember { mutableStateOf("") }
-            var password by remember { mutableStateOf("") }
-            var passwordVisible by remember { mutableStateOf(false) }
-            var rememberMe by remember { mutableStateOf(false) }
-            var isVisible by remember { mutableStateOf(true) } // Untuk animasi visibilitas
-            var otp by remember { mutableStateOf("") }
-            var otpSent by remember { mutableStateOf(false) } // State untuk cek apakah OTP sudah dikirim
+           // State untuk cek apakah OTP sudah dikirim
 
             // Animasi padding
             val animatedPadding by animateDpAsState(
@@ -220,7 +268,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                 // Kirim OTP Button
                 if (email.isNotBlank() && password.isNotBlank() && password.isNotBlank() && !otpSent) {
                     Button(
-                        onClick = { otpSent = true }, // Handle kirim OTP
+                        onClick = { onSendOtpClicked()  }, // Handle kirim OTP
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -248,6 +296,15 @@ fun CreateAccountScreen(navController: NavHostController) {
                         shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.textFieldColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                     )
+                }
+
+                // Display Loading Indicator and Messages
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                }
+
+                if (registrationMessage.isNotEmpty()) {
+                    Text(text = registrationMessage, color = Color.Red, modifier = Modifier.padding(top = 16.dp))
                 }
 
                 // Remember me checkbox
@@ -278,8 +335,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                     animationSpec = tween(durationMillis = 300)
                 )
                 Button(
-                    onClick = {
-                        navController.navigate("my_app")},
+                    onClick = { onVerifyOtpClicked() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),

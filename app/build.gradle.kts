@@ -68,8 +68,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
-
     // Jetpack Compose Integration/NAVIGATION
     implementation (libs.androidx.navigation.compose)
     implementation (libs.androidx.runtime.livedata)
@@ -118,6 +116,7 @@ dependencies {
 
     implementation (libs.androidx.material.icons.extended)
 
+<<<<<<< HEAD
 
 
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
@@ -132,4 +131,12 @@ dependencies {
     implementation (libs.room.ktx)
 
     implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
+=======
+    implementation (libs.ktor.client.core.v230)
+    implementation (libs.ktor.client.android.v230)
+    implementation (libs.ktor.client.content.negotiation) // For ContentNegotiation
+    implementation (libs.ktor.serialization.kotlinx.json)  // For JSON serialization
+    implementation (libs.kotlinx.serialization.json.v151) // Kotlinx serialization
+
+>>>>>>> master
 }

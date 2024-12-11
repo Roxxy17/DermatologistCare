@@ -45,7 +45,7 @@ import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.dermatologistcare.ui.maps.HighlightApp
+import com.example.dermatologistcare.ui.home.maps.HighlightApp
 import com.example.dermatologistcare.ui.camera.LiquidFabMenu
 import com.example.dermatologistcare.ui.camera.SubtractedNavigationShape
 import com.example.dermatologistcare.ui.camera.CameraActivity
@@ -54,8 +54,7 @@ import com.example.dermatologistcare.ui.home.HomeScreen
 import com.example.dermatologistcare.ui.login.CreateAccountScreen
 import com.example.dermatologistcare.ui.login.LoginAccount
 import com.example.dermatologistcare.ui.login.LoginScreenWithNoAnimations
-import com.example.dermatologistcare.ui.maps.GoogleMapView
-
+import com.example.dermatologistcare.ui.home.maps.GoogleMapView
 import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import com.example.dermatologistcare.ui.profile.ProfileScreen
@@ -98,7 +97,7 @@ splashScreen.setKeepOnScreenCondition{true}
                     NavHost(navController = navController, startDestination = "splash") {
                         composable("splash") {
                             if (isOnboardingCompleted.value) {
-                                LoginScreenWithNoAnimations(navController) // Pass navController to LoginScreen
+                                CreateAccountScreen(navController) // Pass navController to LoginScreen
                             } else {
                                 OnboardingScreen {
                                     onboardingUtils.setOnboardingCompleted()

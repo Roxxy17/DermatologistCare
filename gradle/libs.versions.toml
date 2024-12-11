@@ -22,6 +22,16 @@ espressoCore = "3.6.1"
 kotlinxCoroutinesAndroid = "1.7.3"
 kotlinxCoroutinesCore = "1.7.3"
 kotlinxCoroutinesPlayServices = "1.7.3"
+kotlinxSerializationJson = "1.6.3"
+kotlinxSerializationJsonVersion = "1.5.1"
+ktorClientAndroid = "2.1.0"
+ktorClientAndroidVersion = "2.3.0"
+ktorClientContentNegotiation = "2.3.0"
+ktorClientCore = "2.1.0"
+ktorClientCoreVersion = "2.3.0"
+ktorClientJson = "2.1.0"
+ktorClientSerialization = "2.1.0"
+ktorSerializationKotlinxJson = "2.3.0"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.04.01"
@@ -84,6 +94,16 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+kotlinx-serialization-json-v151 = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJsonVersion" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
+ktor-client-android-v230 = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroidVersion" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
+ktor-client-core-v230 = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCoreVersion" }
+ktor-client-json = { module = "io.ktor:ktor-client-json", version.ref = "ktorClientJson" }
+ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktorClientSerialization" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
 maps-ktx = { module = "com.google.maps:maps-ktx", version.ref = "mapsKtx" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
