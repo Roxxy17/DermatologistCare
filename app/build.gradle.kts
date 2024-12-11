@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -116,4 +117,19 @@ dependencies {
     implementation("com.google.maps.android:maps-ktx:3.3.0") // Untuk Maps KTX
 
     implementation (libs.androidx.material.icons.extended)
+
+
+
+    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+
+
+    implementation (libs.androidx.room.runtime)
+
+    // Room testing (optional)
+    testImplementation (libs.room.testing)
+
+    // Coroutine support for Room (optional, but recommended if you use coroutines)
+    implementation (libs.room.ktx)
+
+    implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
 }

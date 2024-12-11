@@ -1,7 +1,6 @@
 package com.example.dermatologistcare.ui.profile
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +19,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.compose.foundation.background
+import androidx.compose.material3.Button
+import java.time.LocalDate
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,10 +60,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.home.Background
+import com.example.dermatologistcare.ui.resource.getOpenSourceClickCount
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 
+
+
 @Composable
-fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
+fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()) {
     val scrollState = rememberScrollState()
     val isImageDialogOpen = remember { mutableStateOf(false) }
     val themeState = themeViewModel.themeState.collectAsState()
@@ -66,11 +74,37 @@ fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
     val isLogoutDialogOpen = remember { mutableStateOf(false) }
 
     val isChangePasswordDialogOpen = remember { mutableStateOf(false) }
+
+    val loginCount = remember { mutableStateOf(getLoginCount(context)) }
+    val targetLoginCount = 7
+    val isAchievementCompleted = loginCount.value >= targetLoginCount
+
+    val isTodayLoggedIn = remember { mutableStateOf(false) }
+// Penentuan warna border berdasarkan status pencapaian
+
+    val profileBorderColor = if (isAchievementCompleted) Color(0xFFFFD700) else Color.Gray
+    val openSourceClickCount = remember { mutableStateOf(getOpenSourceClickCount(context)) }
+    val targetOpenSourceClick = 7
+    val isOpenSourceAchievementCompleted = openSourceClickCount.value >= targetOpenSourceClick
+
+    // Cek status login hari ini
+    LaunchedEffect(Unit) {
+        val lastLoginDate = getLastLoginDate(context)
+        val today = LocalDate.now()
+
+        if (lastLoginDate == today) {
+            isTodayLoggedIn.value = true
+        } else if (lastLoginDate != null && lastLoginDate.isBefore(today)) {
+
+            isTodayLoggedIn.value = false
+        }
+    }
+
     Background()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 16.dp)
             .verticalScroll(scrollState)
     ) {
         Column(
@@ -117,25 +151,36 @@ fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
                                 modifier = Modifier
                                     .align(Alignment.CenterHorizontally)
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Badge",
+                                fontWeight = FontWeight.Light,
+                                fontFamily = coolveticaFontFamily,
+
+
+                            )
+                            if (isOpenSourceAchievementCompleted) {
+                                Image(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .offset(x = (-16).dp, y = 16.dp).size(100.dp),
+                                    painter = painterResource(id = R.drawable.ic_edit),
+                                    contentDescription = "Edit Profile",
+                                )
+
+                            } else {
+                                Text(
+                                    text = "Get Knowledge Seeker to get badge",
+                                    fontWeight = FontWeight.Light,
+                                    fontFamily = coolveticaFontFamily,
+                                    )
+                            }
+
+
                         }
+
                     }
 
-                    // Edit Icon in the Top-Right Corner of the Card
-                   IconButton(onClick = {},
-                       modifier = Modifier
-
-                           .align(Alignment.TopEnd)
-                           .offset(x = (-16).dp, y = 16.dp)
-
-                       ) {
-                       Icon(
-
-                           painter = painterResource(id = R.drawable.ic_edit),
-                           contentDescription = "Edit Profile",
-                           tint = MaterialTheme.colorScheme.tertiary,
-                           modifier = Modifier.size(24.dp)
-                       )
-                   }
                 }
 
                 // Profile Picture
@@ -143,7 +188,7 @@ fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.Gray, CircleShape)
+                        .border(2.dp, profileBorderColor, CircleShape)
                         .clickable { isImageDialogOpen.value = true }
                 ) {
                     Image(
@@ -170,8 +215,182 @@ fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
 
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                AchievementItem("Wildfire", "Reach a 7-day streak", 6, 7)
-                AchievementItem("Scholar", "Learn about 7 diseases", 6, 7)
+//                AchievementItem("Wildfire", "Login for 7 days", 6, 7)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
+
+                    shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+
+                ){
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_track), // Ganti dengan ikon
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Wildfire",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = coolveticaFontFamily,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Login for 7 days and get Gold Border",
+                        fontSize = 14.sp,
+                        fontFamily = coolveticaFontFamily,
+                        fontWeight = FontWeight.Light
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Progress Bar
+                    LinearProgressIndicator(
+                        progress = { loginCount.value / targetLoginCount.toFloat() },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f),
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                    )
+                    Text(
+                        text = "Progress: ${loginCount.value}/$targetLoginCount",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = coolveticaFontFamily,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Button untuk menambah progres
+                    Button(
+                        onClick = {
+                            if (!isAchievementCompleted && !isTodayLoggedIn.value) {
+                                loginCount.value++
+                                saveLoginCount(context, loginCount.value)
+                                saveLastLoginDate(context, LocalDate.now())
+                                isTodayLoggedIn.value = true
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(50.dp) // Adjust height as needed
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        enabled = !isAchievementCompleted && !isTodayLoggedIn.value
+                    ) {
+                        Text(
+                            text = when {
+                                isAchievementCompleted -> "Completed!"
+                                isTodayLoggedIn.value -> "Logged In Today"
+                                else -> "Login Today"
+                            },
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = coolveticaFontFamily,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_track), // Replace with your icon
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Knowledge Seeker",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = coolveticaFontFamily,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Learn About 7 diseases",
+                            fontSize = 14.sp,
+                            fontFamily = coolveticaFontFamily,
+                            fontWeight = FontWeight.Light
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = openSourceClickCount.value / targetOpenSourceClick.toFloat(),
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.tertiary,
+                            trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f),
+                            strokeCap = StrokeCap.Round,
+                        )
+                        Text(
+                            text = "Progress: ${openSourceClickCount.value}/$targetOpenSourceClick",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = coolveticaFontFamily,
+                        )
+                        if (isOpenSourceAchievementCompleted) {
+                            Button(
+                            onClick = {
+
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .height(50.dp) // Adjust height as needed
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primary),
+                            enabled = !isOpenSourceAchievementCompleted
+                        ) {
+                            Text(
+                                text =  "Completed!",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Light,
+                                fontFamily = coolveticaFontFamily,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
+                    }
+                }
             }
 
             // Preference Section
@@ -281,41 +500,33 @@ fun ProfileScreen(themeViewModel: ThemeViewModel = viewModel()) {
 }
 
 
-@Composable
-fun AchievementItem(title: String, subtitle: String, progress: Int, max: Int) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
+// Function to get SharedPreferences
+// Function to get SharedPreferences
+fun getSharedPreferences(context: Context): SharedPreferences {
+    return context.getSharedPreferences("LoginAchievementPrefs", Context.MODE_PRIVATE)
+}
 
-        shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        )
+// Save the last login date
+fun saveLastLoginDate(context: Context, date: LocalDate) {
+    val prefs = getSharedPreferences(context)
+    prefs.edit().putString("lastLoginDate", date.toString()).apply()
+}
 
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_track), // Ganti dengan ikon
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.tertiary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = title, fontSize = 16.sp, fontFamily = coolveticaFontFamily, fontWeight = FontWeight.Light)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = subtitle, fontSize = 14.sp, fontFamily = coolveticaFontFamily, fontWeight = FontWeight.Light)
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { progress / max.toFloat() },
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f),
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-            )
-        }
-    }
+// Get the last login date
+fun getLastLoginDate(context: Context): LocalDate? {
+    val prefs = getSharedPreferences(context)
+    val dateString = prefs.getString("lastLoginDate", null)
+    return dateString?.let { LocalDate.parse(it) }
+}
+
+// Save login count
+fun saveLoginCount(context: Context, count: Int) {
+    val prefs = getSharedPreferences(context)
+    prefs.edit().putInt("loginCount", count).apply()
+}
+
+// Get login count
+fun getLoginCount(context: Context): Int {
+    val prefs = getSharedPreferences(context)
+    return prefs.getInt("loginCount", 0)
 }
