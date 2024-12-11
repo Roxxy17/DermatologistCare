@@ -34,8 +34,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.ui.home.HomeScreen
+import com.example.dermatologistcare.ui.login.data.NetworkClient
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +48,64 @@ fun LoginAccount(navController: NavHostController) {
     val scrollState = rememberScrollState()
     DermatologistCareTheme(darkTheme = isDarkMode) {
         // Mengatur state untuk animasi halaman pertama kali
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
+        var rememberMe by remember { mutableStateOf(false) }
+        var isVisible by remember { mutableStateOf(true) } // Untuk animasi visibilitas
         var pageVisible by remember { mutableStateOf(false) }
+        var otp by remember { mutableStateOf("") }
+        var isLoading by remember { mutableStateOf(false) }
+        var loginMessage by remember { mutableStateOf("") }
+        var otpSent by remember { mutableStateOf(false) }
+
+        // Function to handle sending OTP
+        val onSendOtpClicked = {
+            isLoading = true
+            otpSent = false  // Disable the button when sending OTP
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // Send OTP request using the loginUser function
+                    val response = NetworkClient.loginUser(email, password)
+                    loginMessage = "OTP Sent: $response"
+                    otpSent = true // OTP successfully sent
+                } catch (e: Exception) {
+                    loginMessage = "Error sending OTP: ${e.message}"
+                    otpSent = false // Reset the status if sending fails
+                } finally {
+                    isLoading = false
+                }
+            }
+        }
+
+        // Function to handle login after OTP is verified
+        val onLoginClicked = {
+            if (!otpSent) {
+                loginMessage = "Please request OTP first!"
+            } else if (otp.isBlank()) {
+                loginMessage = "Please enter the OTP."
+            } else {
+                isLoading = true
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        // Verify OTP using the verifyOtp function
+                        val response = NetworkClient.verifyOtp(email, otp)
+                        loginMessage = response
+                        if (response == "OTP verified successfully") {
+                            // Assuming the backend returns JWT token on successful login
+                            val token = response // Replace with actual JWT extraction logic
+                            // Store token for future use, e.g., SharedPreferences or ViewModel
+                            navController.navigate("CreateAccount")
+                        }
+                    } catch (e: Exception) {
+                        loginMessage = "Login failed: ${e.message}"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            }
+        }
+
         LaunchedEffect(Unit) {
             // Menunggu halaman pertama kali dirender, kemudian melakukan animasi
             pageVisible = true
@@ -55,12 +116,7 @@ fun LoginAccount(navController: NavHostController) {
                 .fillMaxSize()
                 .background(Color.White)
         ) {
-            var username by remember { mutableStateOf("") }
-            var email by remember { mutableStateOf("") }
-            var password by remember { mutableStateOf("") }
-            var passwordVisible by remember { mutableStateOf(false) }
-            var rememberMe by remember { mutableStateOf(false) }
-            var isVisible by remember { mutableStateOf(true) } // Untuk animasi visibilitas
+
 
             // Animasi padding
             val animatedPadding by animateDpAsState(
@@ -200,6 +256,67 @@ fun LoginAccount(navController: NavHostController) {
                     )
                 )
 
+                // Kirim OTP Button
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    Button(
+                        onClick = { onSendOtpClicked()  }, // Handle kirim OTP
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text("Kirim OTP")
+                    }
+                }
+
+                if (email.isNotBlank() && password.isNotBlank() && otpSent) {// Password otp
+                    TextField(
+                        value = otp,
+                        onValueChange = { otp = it },
+                        textStyle = TextStyle(
+                            fontFamily = coolveticaFontFamily,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 18.sp
+                        ),
+                        label = {
+                            Text(
+                                text = "OTP",
+                                fontSize = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                                fontFamily = coolveticaFontFamily,
+                                fontWeight = FontWeight.Light
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_email),
+                                contentDescription = "OTP Icon",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.textFieldColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = 0.05f
+                            )
+                        )
+                    )
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                }
+
+                if (loginMessage.isNotEmpty()) {
+                    Text(
+                        text = loginMessage,
+                        color = Color.Red,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+
                 // Remember me checkbox
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -234,9 +351,7 @@ fun LoginAccount(navController: NavHostController) {
                     animationSpec = tween(durationMillis = 300)
                 )
                 Button(
-                    onClick = {
-                        navController.navigate("my_app")
-                    },
+                    onClick = { onLoginClicked() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),

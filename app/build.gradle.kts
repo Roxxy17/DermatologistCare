@@ -24,6 +24,7 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+
             )
         }
     }
@@ -113,4 +114,11 @@ dependencies {
     implementation("com.google.maps.android:maps-ktx:3.3.0") // Untuk Maps KTX
 
     implementation (libs.androidx.material.icons.extended)
+
+    implementation (libs.ktor.client.core.v230)
+    implementation (libs.ktor.client.android.v230)
+    implementation (libs.ktor.client.content.negotiation) // For ContentNegotiation
+    implementation (libs.ktor.serialization.kotlinx.json)  // For JSON serialization
+    implementation (libs.kotlinx.serialization.json.v151) // Kotlinx serialization
+
 }

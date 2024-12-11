@@ -12,8 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import com.example.dermatologistcare.R
+import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 
 // Data class to hold condition details
 data class Condition(
@@ -29,13 +31,13 @@ fun ConditionCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp), // Card padding
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White // Ganti dengan warna yang diinginkan
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
         Column(
@@ -55,10 +57,8 @@ fun ConditionCard(
             // Title Section
             Text(
                 text = condition.title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
-                ),
+                fontWeight = FontWeight.Normal,
+                fontFamily = coolveticaFontFamily,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp, bottom = 8.dp) // Menambah ruang antara gambar dan title
@@ -67,15 +67,14 @@ fun ConditionCard(
             // Symptoms Label and Text
             Text(
                 text = "Symptoms : ",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                ),
+                fontWeight = FontWeight.Light,
+                fontFamily = coolveticaFontFamily,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
                 text = condition.symptoms,
-                style = MaterialTheme.typography.bodyLarge.copy(color = Color.DarkGray),
+                fontWeight = FontWeight.Light,
+                fontFamily = coolveticaFontFamily,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -93,15 +92,17 @@ fun ConditionCard(
                 // Timestamp
                 Text(
                     text = condition.timestamp,
-                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = coolveticaFontFamily,
                     color = Color.Gray
                 )
 
                 // Severity
                 Text(
                     text = condition.severity,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = coolveticaFontFamily,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
                         color = when (condition.severity) {
                             "Mild" -> Color.Green
                             "Moderate" -> Color.Yellow
