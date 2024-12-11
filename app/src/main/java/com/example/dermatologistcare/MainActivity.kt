@@ -401,8 +401,8 @@ fun MyApp(modifier: Modifier = Modifier) {
                 }
             }
 
-            composable(Screen.Resource.route) { ResourceScreen() }
-            composable(Screen.Profile.route) { ProfileScreen() }
+            composable(Screen.Resource.route) { ResourceScreen(context = LocalContext.current) }
+            composable(Screen.Profile.route) { ProfileScreen(context = LocalContext.current) }
             composable(Screen.MapsView.route) { GoogleMapView() }
 
 

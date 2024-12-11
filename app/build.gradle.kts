@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -115,10 +116,27 @@ dependencies {
 
     implementation (libs.androidx.material.icons.extended)
 
+<<<<<<< HEAD
+
+
+    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+
+
+    implementation (libs.androidx.room.runtime)
+
+    // Room testing (optional)
+    testImplementation (libs.room.testing)
+
+    // Coroutine support for Room (optional, but recommended if you use coroutines)
+    implementation (libs.room.ktx)
+
+    implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
+=======
     implementation (libs.ktor.client.core.v230)
     implementation (libs.ktor.client.android.v230)
     implementation (libs.ktor.client.content.negotiation) // For ContentNegotiation
     implementation (libs.ktor.serialization.kotlinx.json)  // For JSON serialization
     implementation (libs.kotlinx.serialization.json.v151) // Kotlinx serialization
 
+>>>>>>> master
 }

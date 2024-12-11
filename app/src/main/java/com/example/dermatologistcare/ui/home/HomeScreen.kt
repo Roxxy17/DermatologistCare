@@ -2,8 +2,12 @@ package com.example.dermatologistcare.ui.home
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.LocationManager
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.core.location.LocationManagerCompat.isLocationEnabled
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -96,6 +101,8 @@ fun Background(
     }
 }
 
+
+
 @Composable
 fun HomeScreen(
     themeViewModel: ThemeViewModel = viewModel(),navController: NavController
@@ -121,6 +128,13 @@ fun HomeScreen(
 
     // Choose the appropriate icon based on the time of day
     val weatherCondition = locationViewModel.weatherMain.value
+
+    fun isLocationEnabled(context: Context): Boolean {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+    val isLocationEnabled = isLocationEnabled(context)
+
 
 // Menentukan ikon berdasarkan kondisi cuaca
     val iconResource = when (weatherCondition) {
@@ -221,7 +235,7 @@ fun HomeScreen(
         }
     }
     val aqiCategory = when {
-        aqi == 0 -> "Error"
+        aqi == 0 -> "Loading..."
         aqi <= 50 -> "Good"
         aqi in 51..100 -> "Moderate"
         aqi in 101..150 -> "Unhealthy for Sensitive Groups"
@@ -241,6 +255,10 @@ fun HomeScreen(
     LaunchedEffect(true) {
         getDeviceLocation()
     }
+
+
+
+
     val isDarkMode = themeState.value.isDarkMode
 
     // Choose color based on dark/light theme
@@ -259,11 +277,81 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(10.dp)
                 .fillMaxWidth()
-        ) {
+        )
+        if (!isLocationEnabled) {
+            // Show card with message to enable location
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Gray.copy(alpha = 0.1f))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.Center) // Ensure text and button are centered
+                    ) {
+                        Text(
+                            text = "Aktifkan Lokasi untuk melihat cuaca dan lokasi terkini",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = coolveticaFontFamily,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            // Ask the user to turn on location in settings
+                            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                            context.startActivity(intent)
+                        }, modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(50.dp) // Adjust height as needed
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            ) {
+                            Text("Nyalakan Lokasi",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Light,
+                                fontFamily = coolveticaFontFamily,
+                                color = MaterialTheme.colorScheme.tertiary )
+                        }
+                    }
 
+                    // Add the refresh button to the right corner
+                    IconButton(
+                        onClick = {
+                            // Call your function to refresh location or retry the action
+                            getDeviceLocation()
+                        },
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.TopEnd) // Align at top-end (right corner)
+                            .padding(8.dp) // Adjust padding to your liking
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.refresh), // Use refresh icon
+                            contentDescription = "Refresh Location",
+                            tint = Color.Gray
+                        )
+                    }
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
                     .wrapContentHeight()
                     .shadow(
                         elevation = 2.dp,
@@ -377,7 +465,7 @@ fun HomeScreen(
                                         text = "AQI",
                                         fontSize = 14.sp,
                                         modifier = Modifier.fillMaxWidth(),
-                                                fontWeight = FontWeight.Light,
+                                        fontWeight = FontWeight.Light,
                                         fontFamily = coolveticaFontFamily,
                                     )
                                     Text(
@@ -389,13 +477,13 @@ fun HomeScreen(
                                         fontFamily = coolveticaFontFamily,
                                     )
                                     LinearProgressIndicator(
-                                        progress = aqi.toFloat() / 20f,
+                                        progress = { aqi.toFloat() / 20f },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp),
                                         color = MaterialTheme.colorScheme.tertiary,
                                         trackColor = cardColor.copy(alpha = 0.25f),
                                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 8.dp)
                                     )
                                 }
                             }

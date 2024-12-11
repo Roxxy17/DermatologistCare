@@ -1,5 +1,6 @@
 package com.example.dermatologistcare.ui.camera
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -29,7 +30,11 @@ class ResultDialog : DialogFragment() {
         }
 
       btnTrack.setOnClickListener {
-
+          val sharedPref = requireActivity().getSharedPreferences("DermaCarePrefs", Context.MODE_PRIVATE)
+          with(sharedPref.edit()) {
+              putBoolean("isTracking", true)
+              apply()
+          }
             Toast.makeText(context, "Tracking disease", Toast.LENGTH_SHORT).show()
         }
 
