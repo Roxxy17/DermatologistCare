@@ -2,10 +2,13 @@ package com.example.dermatologistcare
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -45,6 +48,7 @@ import com.example.dermatologistcare.navigation.Screen
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.NavController
 import com.example.dermatologistcare.ui.home.maps.HighlightApp
 import com.example.dermatologistcare.ui.camera.LiquidFabMenu
 import com.example.dermatologistcare.ui.camera.SubtractedNavigationShape
@@ -59,6 +63,7 @@ import com.example.dermatologistcare.ui.login.data.local.pref.getUserData
 import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import com.example.dermatologistcare.ui.profile.ProfileScreen
+import com.example.dermatologistcare.ui.profile.getSharedPreferences
 import com.example.dermatologistcare.ui.resource.ResourceScreen
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 import kotlinx.coroutines.CoroutineScope
@@ -69,46 +74,45 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private fun allPermissionsGranted() =
-        ContextCompat.checkSelfPermission(
-            this,
-            REQUIRED_PERMISSION
-        ) == PackageManager.PERMISSION_GRANTED
-
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         val onboardingUtils by lazy { OnboardingUtils(this) }
 
         super.onCreate(savedInstanceState)
 
-splashScreen.setKeepOnScreenCondition{true}
+        splashScreen.setKeepOnScreenCondition { true }
         CoroutineScope(Dispatchers.Main).launch {
             delay(1000L)
-            splashScreen.setKeepOnScreenCondition{false}
+            splashScreen.setKeepOnScreenCondition { false }
         }
+
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()
             val themeState = themeViewModel.themeState.collectAsState()
             val navController = rememberNavController()
+
+            // Check if user is logged in and onboarding is complete
+            val context = LocalContext.current
+            val isLoggedIn = isLoggedIn(context) // Check login status
+            val isOnboardingCompleted = onboardingUtils.isOnboardingCompleted() // Check if onboarding is done
+            Log.d("MainActivity", "Is Logged In: $isLoggedIn")
+            Log.d("MainActivity", "Is Onboarding Completed: $isOnboardingCompleted")
             if (!themeState.value.isLoading) {
                 DermatologistCareTheme(darkTheme = themeState.value.isDarkMode) {
-
-                    val onboardingUtils by lazy { OnboardingUtils(this) }
-                    val isOnboardingCompleted = remember { mutableStateOf(onboardingUtils.isOnboardingCompleted()) }
-                    NavHost(navController = navController, startDestination = "splash") {
-                        composable("splash") {
-                            if (isOnboardingCompleted.value) {
-MyApp()
-
-                           //   CreateAccountScreen(navController) // Pass navController to LoginScreen
-                            } else {
-                                OnboardingScreen {
-                                    onboardingUtils.setOnboardingCompleted()
-                                    isOnboardingCompleted.value = true
-                                }
+                    // Use login state to decide navigation
+                    NavHost(
+                        navController = navController,
+                        startDestination = if (isLoggedIn) "my_app"  else "onboarding"
+                    ) {
+                        // Onboarding Screen
+                        composable("onboarding") {
+                            OnboardingScreen {
+                                onboardingUtils.setOnboardingCompleted() // Mark onboarding as completed
+                                navController.navigate("create_account") { popUpTo("onboarding") { inclusive = true } }
                             }
                         }
 
+                        // Create Account Screen (After onboarding)
                         composable("create_account") {
                             CreateAccountScreen(navController) // Navigate to CreateAccountScreen
                         }
@@ -118,24 +122,35 @@ MyApp()
                         composable("login_account") {
                             LoginAccount(navController) // Display LoginScreen when the route is "login_screen"
                         }
+                        // Home Screen (After login)
                         composable("my_app") {
+                            saveLoginState(true, context)
                             MyApp()
                         }
                     }
-
-
                 }
-
-            } else {
-
             }
         }
     }
+
     companion object {
         private const val REQUIRED_PERMISSION = Manifest.permission.CAMERA
     }
 }
 
+// SharedPreferences utility functions for login state
+
+fun saveLoginState(isLoggedIn: Boolean, context: Context) {
+    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
+    editor.putBoolean("is_logged_in", isLoggedIn)
+    editor.apply()
+}
+
+fun isLoggedIn(context: Context): Boolean {
+    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getBoolean("is_logged_in", false)
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -202,7 +217,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                     // Profile Image
                     IconButton(onClick = {navController.navigate(Screen.Profile.route)}) {
                         Image(
-                            painter = painterResource(id = R.drawable.teresa), // Replace with your profile image
+                            painter = painterResource(id = R.drawable.pp), // Replace with your profile image
                             contentDescription = "Profile",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -407,7 +422,7 @@ fun MyApp(modifier: Modifier = Modifier) {
             }
 
             composable(Screen.Resource.route) { ResourceScreen(context = LocalContext.current) }
-            composable(Screen.Profile.route) { ProfileScreen(context = LocalContext.current) }
+            composable(Screen.Profile.route) { ProfileScreen(navController = navController, context = LocalContext.current) }
             composable(Screen.MapsView.route) { GoogleMapView() }
 
 

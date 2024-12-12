@@ -135,7 +135,12 @@ fun LoginAccount(navController: NavHostController) {
                         if (message == "OTP verified successfully" && token.isNotBlank()) {
 
                             saveUserData(context, token, email)
-                            navController.navigate("my_app")
+                            navController.navigate("my_app") {
+                                popUpTo(0) { inclusive = true } // Hapus semua rute dari stack
+                                launchSingleTop = true
+                            }
+
+
                         }
                         }
                     } catch (e: Exception) {
@@ -459,9 +464,9 @@ fun LoginAccount(navController: NavHostController) {
                         targetValue = if (isVisible) 1f else 0.9f,
                         animationSpec = tween(durationMillis = 300)
                     )
-                    MediaButton(R.drawable.image1, scale)
+
                     MediaButton(R.drawable.image2, scale)
-                    MediaButton(R.drawable.image3, scale)
+
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

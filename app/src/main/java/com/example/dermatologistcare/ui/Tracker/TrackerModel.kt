@@ -8,40 +8,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.dermatologistcare.R
 
 @Composable
 fun ConditionList() {
     // Sample data
     val conditions = listOf(
         Condition(
-            title = "Cancer",
+            title = "Tinea Ringworm Candidiasis",
+            image = R.drawable.ring,
             severity = "Mild",
             symptoms = "Dry skin, itching, redness.",
-            timestamp = "10:10 AM - 3 DAYS AGO"
-        ),
-        Condition(
-            title = "Cancer",
-            severity = "Moderate",
-            symptoms = "Redness, swelling, pain.",
-            timestamp = "11:00 AM - 1 DAY AGO"
-        ),
-        Condition(
-            title = "Cancer",
-            severity = "Severe",
-            symptoms = "Severe redness, blistering, pain.",
-            timestamp = "12:30 PM - 2 HOURS AGO"
-        ),
-        Condition(
-            title = "Cancer",
-            severity = "Moderate",
-            symptoms = "Itching, rash, dry patches.",
-            timestamp = "1:00 PM - 4 HOURS AGO"
-        ),
-        Condition(
-            title = "Cancer",
-            severity = "Mild",
-            symptoms = "Itching, irritation, mild redness.",
-            timestamp = "2:30 PM - 30 MIN AGO"
+            timestamp = "10:10 AM"
         )
     )
 

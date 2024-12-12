@@ -551,27 +551,6 @@ fun HomeScreen(
                 }
             }
         }
-
-        Text(
-            text = "Recent Diagnose",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Light,
-            fontFamily = coolveticaFontFamily,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, start = 16.dp, bottom = 0.dp)
-        )
-
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        ) {
-            items(10) { index ->
-                RecentItem(index)
-            }
-        }
-
         Text(
             text = "Hospital Near Me",
             fontSize = 32.sp,
@@ -624,7 +603,7 @@ fun HomeScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Light,
                     fontFamily = coolveticaFontFamily,
-                    color = MaterialTheme.colorScheme.tertiary // Text color to contrast the background
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
 
