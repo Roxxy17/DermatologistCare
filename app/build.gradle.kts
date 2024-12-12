@@ -108,7 +108,7 @@ dependencies {
     implementation (libs.androidx.appcompat)
 
     // Google Maps
-    implementation("com.google.android.gms:play-services-maps:18.0.2") // Untuk Google Play Services Maps
+    implementation("com.google.android.gms:play-services-maps:19.0.0") // Untuk Google Play Services Maps
     implementation("com.google.maps.android:maps-compose:2.11.0") // Untuk Jetpack Compose dengan Maps
     implementation("com.google.maps.android:android-maps-utils:2.2.0") // Untuk Maps Utilities
     implementation("com.google.maps.android:maps-ktx:3.3.0") // Untuk Maps KTX
