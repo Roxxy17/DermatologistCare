@@ -5,15 +5,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- ImageView for displaying the image result -->
     <ImageView
         android:id="@+id/imageResult"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
         android:background="#000000"
-        app:layout_constraintTop_toTopOf="parent"
+        android:scaleType="fitCenter"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- TextView for ML prediction result -->
+    <TextView
+        android:id="@+id/resultText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="Prediction result will appear here"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/imageResult"
+        app:layout_constraintBottom_toTopOf="@+id/btnSave"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -23,18 +39,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-    android:indeterminate="true"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+        android:indeterminate="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Save Button -->
     <Button
         android:id="@+id/btnSave"
         android:layout_width="253dp"
         android:layout_height="94dp"
         android:layout_marginBottom="70dp"
-        android:text="Save Image"
+        android:text="Detect"
         android:background="@drawable/rounded_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

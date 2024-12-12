@@ -98,9 +98,9 @@ splashScreen.setKeepOnScreenCondition{true}
                     NavHost(navController = navController, startDestination = "splash") {
                         composable("splash") {
                             if (isOnboardingCompleted.value) {
+MyApp()
 
-
-                              CreateAccountScreen(navController) // Pass navController to LoginScreen
+                           //   CreateAccountScreen(navController) // Pass navController to LoginScreen
                             } else {
                                 OnboardingScreen {
                                     onboardingUtils.setOnboardingCompleted()
