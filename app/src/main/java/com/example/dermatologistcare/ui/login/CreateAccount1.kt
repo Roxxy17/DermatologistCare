@@ -463,10 +463,7 @@ fun CreateAccountScreen(navController: NavHostController) {
                     )
                     SocialMediaButton(
                         iconResId = R.drawable.image2, // Ganti dengan resource icon yang sesuai
-                        scale = 1f
-                    ) {
-                        navController.navigate("my_app") // Navigasi ke layar 'my_app'
-                    }
+                        scale)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -499,7 +496,7 @@ fun CreateAccountScreen(navController: NavHostController) {
 fun SocialMediaButton(
     iconResId: Int,
     scale: Float,
-    onClick: () -> Unit // Tambahkan parameter untuk aksi klik
+    // Tambahkan parameter untuk aksi klik
 ) {
     Box(
         modifier = Modifier
@@ -511,7 +508,7 @@ fun SocialMediaButton(
             )
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.primary)
-            .clickable { onClick() }, // Tambahkan aksi klik
+           , // Tambahkan aksi klik
         contentAlignment = Alignment.Center
     ) {
         Image(
