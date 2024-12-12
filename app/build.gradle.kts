@@ -40,6 +40,7 @@ android {
         compose = true
         viewBinding = true
         buildConfig = true
+        mlModelBinding = true
     }
 
 }
@@ -60,6 +61,8 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.core.splashscreen)
+    implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.metadata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -116,7 +119,7 @@ dependencies {
 
     implementation (libs.androidx.material.icons.extended)
 
-<<<<<<< HEAD
+
 
 
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
@@ -131,12 +134,22 @@ dependencies {
     implementation (libs.room.ktx)
 
     implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
-=======
+
     implementation (libs.ktor.client.core.v230)
     implementation (libs.ktor.client.android.v230)
     implementation (libs.ktor.client.content.negotiation) // For ContentNegotiation
     implementation (libs.ktor.serialization.kotlinx.json)  // For JSON serialization
     implementation (libs.kotlinx.serialization.json.v151) // Kotlinx serialization
 
->>>>>>> master
+
+
+
+        implementation ("org.tensorflow:tensorflow-lite:2.13.0")
+        implementation ("org.tensorflow:tensorflow-lite-support:0.4.3")
+        implementation ("org.tensorflow:tensorflow-lite-metadata:0.4.3")
+        implementation ("org.tensorflow:tensorflow-lite-task-vision:0.4.3")
+
+
+
+
 }

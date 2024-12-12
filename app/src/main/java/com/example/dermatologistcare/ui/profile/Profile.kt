@@ -1,5 +1,6 @@
 package com.example.dermatologistcare.ui.profile
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,8 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import java.time.LocalDate
 import androidx.compose.material3.ButtonDefaults
@@ -51,15 +55,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.dermatologistcare.MainActivity
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.home.Background
+import com.example.dermatologistcare.ui.login.CreateAccountScreen
+import com.example.dermatologistcare.ui.login.data.local.pref.getUserData
 import com.example.dermatologistcare.ui.resource.getOpenSourceClickCount
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 
@@ -87,6 +96,7 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
     val targetOpenSourceClick = 7
     val isOpenSourceAchievementCompleted = openSourceClickCount.value >= targetOpenSourceClick
 
+    val (token, email) = getUserData(context)
     // Cek status login hari ini
     LaunchedEffect(Unit) {
         val lastLoginDate = getLastLoginDate(context)
@@ -144,7 +154,7 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
                             Spacer(modifier = Modifier.height(60.dp)) // Ruang untuk profil image overlap
                             // Profile Name
                             Text(
-                                text = "Atmin",
+                                text =   if (email != null) "$email!" else "Welcome!",
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.Light,
                                 fontFamily = coolveticaFontFamily,
@@ -457,22 +467,61 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
 
 
                 // Logout Button
-                TextButton(
-                    onClick = { isLogoutDialogOpen.value = true},
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red),
-
-                ) {
-                    Text(
-                        text = "Logout",
-                        style = TextStyle(
-                            fontSize = 20.sp,
-                            fontFamily = coolveticaFontFamily,
-                            fontWeight = FontWeight.Light
+                    TextButton(
+                        onClick = { isLogoutDialogOpen.value = true },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) {
+                        Text(
+                            text = "Logout",
+                            style = TextStyle(
+                                fontSize = 20.sp,
+                                fontFamily = coolveticaFontFamily,
+                                fontWeight = FontWeight.Light
+                            )
                         )
+                    }
 
+                    // Logout confirmation dialog
+                    if (isLogoutDialogOpen.value) {
+                        AlertDialog(
+                            onDismissRequest = { isLogoutDialogOpen.value = false },
+                            title = { Text("Confirm Logout") },
+                            text = { Text("Are you sure you want to logout?") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        performLogout(
+                                            context = context,
+                                            email = email,
+                                            token = token,
+                                            onLogoutSuccess = {
+                                                // Navigate to login screen or perform necessary actions
+                                                clearUserData(context)
+                                                Toast.makeText(context, "Logout successful", Toast.LENGTH_SHORT).show()
+                                                val intent = Intent(context, MainActivity::class.java)
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                                context.startActivity(intent)
+                                                (context as? Activity)?.finish()
+                                            },
+                                            onLogoutError = { errorMessage ->
+                                                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
+                                        isLogoutDialogOpen.value = false
+                                    }
+                                ) {
+                                    Text("Yes")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = { isLogoutDialogOpen.value = false }
+                                ) {
+                                    Text("Cancel")
+                                }
+                            }
                         )
-
-                }
+                    }
                 }
                 }
             }
