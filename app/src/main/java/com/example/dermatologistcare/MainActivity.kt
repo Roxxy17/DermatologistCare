@@ -55,6 +55,7 @@ import com.example.dermatologistcare.ui.login.CreateAccountScreen
 import com.example.dermatologistcare.ui.login.LoginAccount
 import com.example.dermatologistcare.ui.login.LoginScreenWithNoAnimations
 import com.example.dermatologistcare.ui.home.maps.GoogleMapView
+import com.example.dermatologistcare.ui.login.data.local.pref.getUserData
 import com.example.dermatologistcare.ui.onboarding.OnboardingScreen
 import com.example.dermatologistcare.ui.onboarding.OnboardingUtils
 import com.example.dermatologistcare.ui.profile.ProfileScreen
@@ -97,7 +98,9 @@ splashScreen.setKeepOnScreenCondition{true}
                     NavHost(navController = navController, startDestination = "splash") {
                         composable("splash") {
                             if (isOnboardingCompleted.value) {
-                                CreateAccountScreen(navController) // Pass navController to LoginScreen
+
+
+                              CreateAccountScreen(navController) // Pass navController to LoginScreen
                             } else {
                                 OnboardingScreen {
                                     onboardingUtils.setOnboardingCompleted()
@@ -139,6 +142,8 @@ splashScreen.setKeepOnScreenCondition{true}
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MyApp(modifier: Modifier = Modifier) {
+    val context = LocalContext.current // Obtain the context
+    val (token, email) = getUserData(context)
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val themeViewModel: ThemeViewModel = viewModel()
@@ -182,7 +187,7 @@ fun MyApp(modifier: Modifier = Modifier) {
                                 } else if (currentRoute == Screen.Resource.route) {
                                 "Resource"
                             } else {
-                                "Hello, Atmint!" // $username
+                                 if (email != null) "Hello, $email!" else "Welcome!"
                             },
                             fontSize =32.sp,
                             fontWeight = FontWeight.Light,
