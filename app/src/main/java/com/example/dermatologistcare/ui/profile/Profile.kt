@@ -62,9 +62,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.dermatologistcare.MainActivity
 import com.example.dermatologistcare.R
+import com.example.dermatologistcare.saveLoginState
 import com.example.dermatologistcare.setting.ThemeViewModel
 import com.example.dermatologistcare.ui.home.Background
 import com.example.dermatologistcare.ui.login.CreateAccountScreen
@@ -75,7 +77,7 @@ import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 
 
 @Composable
-fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()) {
+fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel(),navController: NavController) {
     val scrollState = rememberScrollState()
     val isImageDialogOpen = remember { mutableStateOf(false) }
     val themeState = themeViewModel.themeState.collectAsState()
@@ -202,7 +204,7 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
                         .clickable { isImageDialogOpen.value = true }
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.teresa),
+                        painter = painterResource(id = R.drawable.pp),
                         contentDescription = "Profile Picture",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -450,15 +452,7 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
                     )
 
                 }
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                Text(text = "Change Password", fontSize = 20.sp, fontWeight = FontWeight.Light,
-                    fontFamily = coolveticaFontFamily,
-                    modifier = Modifier.clickable { isChangePasswordDialogOpen.value = true }
-                        .padding(vertical = 8.dp)
-                )
+
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -481,47 +475,6 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
                         )
                     }
 
-                    // Logout confirmation dialog
-                    if (isLogoutDialogOpen.value) {
-                        AlertDialog(
-                            onDismissRequest = { isLogoutDialogOpen.value = false },
-                            title = { Text("Confirm Logout") },
-                            text = { Text("Are you sure you want to logout?") },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        performLogout(
-                                            context = context,
-                                            email = email,
-                                            token = token,
-                                            onLogoutSuccess = {
-                                                // Navigate to login screen or perform necessary actions
-                                                clearUserData(context)
-                                                Toast.makeText(context, "Logout successful", Toast.LENGTH_SHORT).show()
-                                                val intent = Intent(context, MainActivity::class.java)
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                                context.startActivity(intent)
-                                                (context as? Activity)?.finish()
-                                            },
-                                            onLogoutError = { errorMessage ->
-                                                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                                            }
-                                        )
-                                        isLogoutDialogOpen.value = false
-                                    }
-                                ) {
-                                    Text("Yes")
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(
-                                    onClick = { isLogoutDialogOpen.value = false }
-                                ) {
-                                    Text("Cancel")
-                                }
-                            }
-                        )
-                    }
                 }
                 }
             }
@@ -533,7 +486,7 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
     // Dialog untuk menampilkan gambar penuh
     if (isImageDialogOpen.value) {
         FullImageDialog(
-            imageRes = R.drawable.teresa,
+            imageRes = R.drawable.pp,
             onDismiss = { isImageDialogOpen.value = false }
         )
     }
@@ -542,13 +495,29 @@ fun ProfileScreen(context: Context, themeViewModel: ThemeViewModel = viewModel()
         LogoutConfirmationDialog(
             onDismiss = { isLogoutDialogOpen.value = false },
             onConfirm = {
-
+                performLogout(
+                    context = context,
+                    email = email,
+                    token = token,
+                    onLogoutSuccess = {
+                        // Navigate to login screen or perform necessary actions
+                        clearUserData(context)
+                        Toast.makeText(context, "Logout successful", Toast.LENGTH_SHORT).show()
+                        saveLoginState(isLoggedIn = false, context)
+                        val intent = Intent(context, MainActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        context.startActivity(intent)
+                        (context as? Activity)?.finish()
+                    },
+                    onLogoutError = { errorMessage ->
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    }
+                )
+                isLogoutDialogOpen.value = false
             }
         )
     }
 }
-
-
 // Function to get SharedPreferences
 // Function to get SharedPreferences
 fun getSharedPreferences(context: Context): SharedPreferences {

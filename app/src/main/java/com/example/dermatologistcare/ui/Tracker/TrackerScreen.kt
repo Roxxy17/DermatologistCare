@@ -22,7 +22,8 @@ data class Condition(
     val title: String,
     val severity: String,
     val symptoms: String,
-    val timestamp: String
+    val timestamp: String,
+    val image: Int
 )
 
 @Composable
@@ -46,7 +47,7 @@ fun ConditionCard(
         ) {
             // Gambar Section (bisa disesuaikan dengan gambar yang diinginkan)
             Image(
-                painter = painterResource(id = R.drawable.kulit), // Ganti dengan gambar Anda
+               painter = painterResource(id = condition.image), // Ganti dengan gambar Anda
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()

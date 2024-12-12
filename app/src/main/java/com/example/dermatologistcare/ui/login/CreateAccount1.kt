@@ -13,6 +13,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,17 +38,21 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dermatologistcare.R
 import com.example.dermatologistcare.ui.home.HomeScreen
 import com.example.dermatologistcare.ui.login.data.NetworkClient
+import com.example.dermatologistcare.ui.login.data.local.pref.saveUserData
 import com.example.dermatologistcare.ui.theme.DermatologistCareTheme
 import com.example.dermatologistcare.ui.theme.coolveticaFontFamily
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateAccountScreen(navController: NavHostController) {
     val isDarkMode = isSystemInDarkTheme()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
     DermatologistCareTheme(darkTheme = isDarkMode) {
 
         var username by remember { mutableStateOf("") }
@@ -58,41 +65,75 @@ fun CreateAccountScreen(navController: NavHostController) {
         var otpSent by remember { mutableStateOf(false) }
         var isLoading by remember { mutableStateOf(false) }
         var registrationMessage by remember { mutableStateOf("") }
+        var countdown by remember { mutableStateOf(0) }
+        var loginMessage by remember { mutableStateOf("") }
 
+        fun isValidPassword(password: String): Boolean {
+            val regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+            return password.matches(regex.toRegex())
+        }
         // Function to handle sending OTP
         val onSendOtpClicked = {
-            isLoading = true
+            if (countdown == 0) {
+                isLoading = true
+                otpSent = false
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val response = NetworkClient.registerUser(email, username, password)
-                    registrationMessage = response // Show server response
-                    otpSent = true // OTP sent, show OTP field
+                    val jsonResponse = JSONObject(response)
+                    val message = jsonResponse.getString("message") // Extract the message field
+                    withContext(Dispatchers.Main) {
+                        loginMessage = message
+                        otpSent = message.contains("Registration successful!", ignoreCase = true) // Determine OTP success based on the message
+                        if (otpSent) {
+                            countdown = 60 // Start countdown when OTP is sent successfully
+                        }
+                    }
                 } catch (e: Exception) {
-                    registrationMessage = "Error: ${e.message}"
+                    withContext(Dispatchers.Main) {
+                        loginMessage = e.message ?: "Unknown error occurred"
+                        otpSent = false
+                    }
                 } finally {
                     isLoading = false
                 }
+            }
             }
         }
 
         // Function to verify OTP and complete registration
         val onVerifyOtpClicked = {
             if (otp.isBlank()) {
-                registrationMessage = "Please enter the OTP."
+                loginMessage = "Please enter the OTP."
             } else {
                 isLoading = true
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val response = NetworkClient.verifyOtp(email, otp)
-                        registrationMessage = response // Show server response
-                        if (response == "Registration Successful") {
-                            // Assuming the backend returns JWT token on successful registration
-                            val token = response // Replace with actual token extraction
-                            // Store token for future use (e.g., SharedPreferences, ViewModel)
-                            navController.navigate("my_app")
+                        // Verify OTP using the verifyOtp function
+                        val response = NetworkClient.verifyOtp(email, otp) // Response dari API
+                        val jsonResponse = JSONObject(response) // Parsing JSON
+                        val message = jsonResponse.getString("message")
+                        val token = jsonResponse.optString("token") // Mengambil token jika ada
+
+
+                        withContext(Dispatchers.Main) {
+                            loginMessage = message
+                            if (message == "OTP verified successfully" && token.isNotBlank()) {
+
+                                saveUserData(context, token, email)
+                                navController.navigate("my_app") {
+                                    popUpTo(0) { inclusive = true } // Hapus semua rute dari stack
+                                    launchSingleTop = true
+                                }
+
+
+                            }
                         }
                     } catch (e: Exception) {
-                        registrationMessage = "Registration failed: ${e.message}"
+                        withContext(Dispatchers.Main) {
+                            // If the error message is direct from the server, use it
+                            loginMessage = e.message ?: "Unknown error occurred"
+                        }
                     } finally {
                         isLoading = false
                     }
@@ -219,7 +260,10 @@ fun CreateAccountScreen(navController: NavHostController) {
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                     },
-                    modifier = Modifier
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Email),
+
+                                modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
                     shape = RoundedCornerShape(12.dp),
@@ -229,7 +273,10 @@ fun CreateAccountScreen(navController: NavHostController) {
                 // Password input
                 TextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { password = it
+                        if (isValidPassword(password)) {
+                            loginMessage = "" // Hilangkan peringatan jika password valid
+                        }},
                     textStyle = TextStyle(
                         fontFamily = coolveticaFontFamily,
                         fontWeight = FontWeight.Light,
@@ -264,68 +311,107 @@ fun CreateAccountScreen(navController: NavHostController) {
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.textFieldColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
                 )
-
-                // Kirim OTP Button
-                if (email.isNotBlank() && password.isNotBlank() && password.isNotBlank() && !otpSent) {
-                    Button(
-                        onClick = { onSendOtpClicked()  }, // Handle kirim OTP
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        Text("Kirim OTP")
-                    }
-                }
-
-                // OTP Input muncul jika otpSent true
-                if (otpSent) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextField(
-                        value = otp,
-                        onValueChange = { otp = it },
-                        label = { Text("Masukkan OTP") },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_lock),
-                                contentDescription = "OTP Icon"
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = TextFieldDefaults.textFieldColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                if (password.isNotBlank() && !isValidPassword(password)) {
+                    Text(
+                        text = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontFamily = coolveticaFontFamily,
+                        fontWeight = FontWeight.Light
                     )
                 }
-
-                // Display Loading Indicator and Messages
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
-                }
-
-                if (registrationMessage.isNotEmpty()) {
-                    Text(text = registrationMessage, color = Color.Red, modifier = Modifier.padding(top = 16.dp))
-                }
-
-                // Remember me checkbox
+                // Kirim OTP Button
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    Checkbox(
-                        checked = rememberMe,
-                        onCheckedChange = { rememberMe = it },
-                        colors = CheckboxDefaults.colors(checkmarkColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    // OTP TextField
+                    TextField(
+                        value = otp,
+                        onValueChange = { otp = it },
+                        textStyle = TextStyle(
+                            fontFamily = coolveticaFontFamily,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 18.sp
+                        ),
+                        label = {
+                            Text(
+                                text = "OTP",
+                                fontSize = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
+                                fontFamily = coolveticaFontFamily,
+                                fontWeight = FontWeight.Light
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_email),
+                                contentDescription = "OTP Icon",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number // Change this line to specify numeric keyboard
+                        ),
+                        modifier = Modifier
+                            .weight(1f) // This makes the TextField take available space
+                            .padding(end = 8.dp), // Add spacing between TextField and Button
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.textFieldColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                        )
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Remember me",
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontFamily = coolveticaFontFamily,
-                        fontWeight = FontWeight.Light)
+
+                    // Send OTP Button
+                    Button(
+                        onClick = { onSendOtpClicked() }, // Handle OTP send
+                        enabled = countdown == 0,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                        ,
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text(text = if (countdown == 0) "Send OTP" else "$countdown",
+                            fontFamily = coolveticaFontFamily,
+                            fontWeight = FontWeight.Light)
+                    }
                 }
+
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+                }
+
+                if (loginMessage.isNotEmpty()) {
+                    AlertDialog(
+                        onDismissRequest = { loginMessage = "" }, // Clear message when dialog is dismissed
+                        confirmButton = {
+                            Button(
+                                onClick = { loginMessage = "" },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )// Dismiss dialog on button click
+                            ) {
+                                Text("OK",
+                                    fontFamily = coolveticaFontFamily,
+                                    fontWeight = FontWeight.Light)
+                            }
+                        },
+                        title = {
+                            Text("Register Status") // Dialog title
+                        },
+                        text = {
+                            Text(loginMessage) // Display the login message
+                        }
+                    )
+                }
+
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -375,9 +461,12 @@ fun CreateAccountScreen(navController: NavHostController) {
                         targetValue = if (isVisible) 1f else 0.9f,
                         animationSpec = tween(durationMillis = 300)
                     )
-                    SocialMediaButton(R.drawable.image1, scale)
-                    SocialMediaButton(R.drawable.image2, scale)
-                    SocialMediaButton(R.drawable.image3, scale)
+                    SocialMediaButton(
+                        iconResId = R.drawable.image2, // Ganti dengan resource icon yang sesuai
+                        scale = 1f
+                    ) {
+                        navController.navigate("my_app") // Navigasi ke layar 'my_app'
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -407,7 +496,11 @@ fun CreateAccountScreen(navController: NavHostController) {
 }
 
 @Composable
-fun SocialMediaButton(iconResId: Int, scale: Float) {
+fun SocialMediaButton(
+    iconResId: Int,
+    scale: Float,
+    onClick: () -> Unit // Tambahkan parameter untuk aksi klik
+) {
     Box(
         modifier = Modifier
             .size(width = (100 * scale).dp, height = (60 * scale).dp)
@@ -417,7 +510,8 @@ fun SocialMediaButton(iconResId: Int, scale: Float) {
                 shape = RoundedCornerShape(12.dp)
             )
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.primary),
+            .background(MaterialTheme.colorScheme.primary)
+            .clickable { onClick() }, // Tambahkan aksi klik
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -427,6 +521,7 @@ fun SocialMediaButton(iconResId: Int, scale: Float) {
         )
     }
 }
+
 
 @Preview
 @Composable
